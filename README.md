@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/xk6smvvpr3wk9pru?svg=true)](https://ci.appveyor.com/project/dend/nue)
+
 # nue
 
 Tool to sort assemblies shipped in NuGet packages into their correct moniker folders.
