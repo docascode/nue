@@ -1,6 +1,7 @@
 ﻿using System;
 using Nue.Models;
 using Nue.Core;
+using System.Threading.Tasks;
 
 namespace Nue
 {
@@ -18,7 +19,7 @@ namespace Nue
                 {
                     var frameworks = options.Framework.Split(',');
 
-                    Extractor.DownloadPackages(options.PackagePath, options.OutputPath, frameworks, NugetFeedUrl);
+                    Task.Run(() => Extractor.DownloadPackages(options.PackagePath, options.OutputPath, frameworks, NugetFeedUrl)).Wait();
                 }
                 else if (options.Mode == "listpac")
                 {

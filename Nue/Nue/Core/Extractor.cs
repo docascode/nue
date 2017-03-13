@@ -6,12 +6,22 @@ using Microsoft.VisualBasic.FileIO;
 using Nue.Models;
 using NuGet;
 using SearchOption = System.IO.SearchOption;
+using NuGet.Packaging.Core;
+using NuGet.Protocol.Core.Types;
+using NuGet.Configuration;
+using NuGet.Versioning;
+using NuGet.Protocol;
+using NuGet.ProjectManagement;
+using NuGet.PackageManagement;
+using NuGet.Resolver;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Nue.Core
 {
     public class Extractor
     {
-        public static bool DownloadPackages(string packagePath, string outputPath, string[] frameworks, string feedUrl)
+        public async static Task<bool> DownloadPackages(string packagePath, string outputPath, string[] frameworks, string feedUrl)
         {
             if (!string.IsNullOrWhiteSpace(packagePath) && !string.IsNullOrWhiteSpace(outputPath) &&
                 frameworks.Length > 0 && !string.IsNullOrWhiteSpace(feedUrl))
@@ -45,55 +55,111 @@ namespace Nue.Core
                     }
                 }
 
-                var repo = PackageRepositoryFactory.Default.CreateRepository(feedUrl);
-                var pacMan = new PackageManager(repo, outputPath + "\\_pacman");
+                List<Lazy<INuGetResourceProvider>> providers = new List<Lazy<INuGetResourceProvider>>();
+                providers.AddRange(Repository.Provider.GetCoreV3());  // Add v3 API support
+
+                string rootPath = outputPath + "\\_pacman";
+                ISettings settings = Settings.LoadDefaultSettings(rootPath, null, new MachineWideSettings());
+                ISourceRepositoryProvider sourceRepositoryProvider = new SourceRepositoryProvider(settings, providers);
+
+                PackageSource packageSource = new PackageSource("https://api.nuget.org/v3/index.json");
+
+                NuGetProject project = new FolderNuGetProject(rootPath);
+                NuGetPackageManager packageManager = new NuGetPackageManager(sourceRepositoryProvider, settings, rootPath)
+                {
+                    PackagesFolderNuGetProject = (FolderNuGetProject)project
+                };
+
+                bool allowPrereleaseVersions = false;
+                bool allowUnlisted = false;
+                ResolutionContext resolutionContext = new ResolutionContext(DependencyBehavior.Highest, allowPrereleaseVersions, allowUnlisted, VersionConstraints.None);
+                INuGetProjectContext projectContext = new ProjectContext();
+                SourceRepository sourceRepository = new SourceRepository(packageSource, providers);
 
                 foreach (var package in packages)
                 {
-                    Console.WriteLine($"Getting data for {package.Name}...");
+                    ConsoleEx.WriteLine($"Attempting to install: {package.GetFullName()}. Installing...", ConsoleColor.Yellow);
+                    PackageIdentity identity = new PackageIdentity(package.Name,NuGetVersion.Parse(package.Version));
+                    await packageManager.InstallPackageAsync(packageManager.PackagesFolderNuGetProject,
+                        identity, resolutionContext, projectContext, sourceRepository,
+                        null,  // This is a list of secondary source respositories, probably empty
+                        CancellationToken.None);
+                    ConsoleEx.WriteLine($"Getting data for {package.Name}...", ConsoleColor.Yellow);
 
-                    var repoPackages = repo.FindPackagesById(package.Name).ToList();
-                    var desiredPackage =
-                        repoPackages.FirstOrDefault(x => x.Version.ToFullString() == package.Version);
-                    Console.WriteLine($"Found the following package: {desiredPackage.GetFullName()}. Installing...");
-                    pacMan.InstallPackage(desiredPackage, true, true);
-                    Console.WriteLine("Package installed!");
+                    ConsoleEx.WriteLine("Downloaded package and dependencies.",ConsoleColor.Green);
 
-                    var pacManPackagePath = outputPath + "\\_pacman\\" + desiredPackage.Id + "." +
-                                            desiredPackage.Version;
+                    var packageFqn = package.Name + "." + package.Version;
+                    var pacManPackagePath = outputPath + "\\_pacman\\" + packageFqn;
                     var pacManPackageLibPath = pacManPackagePath + "\\lib";
+                    var finalPath = Path.Combine(outputPath, package.Moniker);
 
                     if (Directory.Exists(pacManPackageLibPath))
                     {
                         var directories = Directory.GetDirectories(pacManPackageLibPath);
+                        var availableMonikers = new List<string>();
+                        var dependencyFolders = from c in Directory.GetDirectories(outputPath + "\\_pacman")
+                                                where Path.GetFileName(c).ToLower() != packageFqn.ToLower()
+                                                select c;
 
                         Console.WriteLine("Currently available lib sets:");
-
-                        var availableMonikers = new List<string>();
-
-                        // Print available monikers from the downloaded package.
+                        ConsoleEx.WriteLine("|__", ConsoleColor.Yellow);
                         foreach (var folder in directories)
                         {
                             var tfmFolder = Path.GetFileName(folder);
                             availableMonikers.Add(tfmFolder);
-                            Console.WriteLine(tfmFolder);
+                            ConsoleEx.WriteLine("   |___" + tfmFolder, ConsoleColor.Yellow);
+                        }
+
+                        Console.WriteLine("Package dependencies:");
+                        ConsoleEx.WriteLine("|__", ConsoleColor.Yellow);
+                        foreach (var dependency in dependencyFolders)
+                        {
+                            ConsoleEx.WriteLine("   |___" + Path.GetFileNameWithoutExtension(dependency), ConsoleColor.Yellow);
                         }
 
                         foreach (var framework in frameworks)
                         {
                             var frameworkIsAvailable = availableMonikers.Contains(framework);
-                            Console.WriteLine($"Found target in package: {frameworkIsAvailable}");
+                            ConsoleEx.WriteLine($"Target framework found in package: {frameworkIsAvailable}", ConsoleColor.Yellow);
 
                             if (frameworkIsAvailable)
                             {
-                                var finalPath = Path.Combine(outputPath, package.Moniker);
-
                                 Directory.CreateDirectory(finalPath);
 
                                 var binaries = Directory.GetFiles(Path.Combine(pacManPackageLibPath, framework), "*.dll",
                                     SearchOption.TopDirectoryOnly);
                                 foreach (var binary in binaries)
-                                    File.Copy(binary, Path.Combine(finalPath, Path.GetFileName(binary)));
+                                    File.Copy(binary, Path.Combine(finalPath, Path.GetFileName(binary)), true);
+
+                                foreach (var dependency in dependencyFolders)
+                                {
+                                    Directory.CreateDirectory(Path.Combine(finalPath, "dependencies"));
+
+                                    string libFolder = string.Empty;
+                                    string[] dependencyBinaries;
+                                    if (Directory.Exists(libFolder))
+                                    {
+                                        libFolder = Path.Combine(dependency, "lib", framework);
+                                    }
+                                    else
+                                    {
+                                        var dependencyLib = Path.Combine(dependency, "lib");
+                                        if (Directory.Exists(dependencyLib))
+                                        {
+                                            var frameworkDirectory = from c in Directory.GetDirectories(Path.Combine(dependency, "lib")) where c.Contains(dependency) select c;
+                                            libFolder = frameworkDirectory.FirstOrDefault();
+                                        }
+                                    }
+
+                                    if (!string.IsNullOrWhiteSpace(libFolder))
+                                    {
+                                        dependencyBinaries = Directory.GetFiles(libFolder, "*.dll",
+                                                SearchOption.TopDirectoryOnly);
+
+                                        foreach (var binary in dependencyBinaries)
+                                            File.Copy(binary, Path.Combine(finalPath, "dependencies", Path.GetFileName(binary)), true);
+                                    }
+                                }
                             }
                             else
                             {
@@ -101,6 +167,11 @@ namespace Nue.Core
                             }
                         }
                     }
+
+
+                    ConsoleEx.WriteLine($"Deleting {Path.Combine(outputPath, "_pacman")}", ConsoleColor.Red);
+                    Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman"));
+
                 }
 
                 return true;
