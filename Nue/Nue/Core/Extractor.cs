@@ -72,7 +72,7 @@ namespace Nue.Core
 
                 bool allowPrereleaseVersions = false;
                 bool allowUnlisted = false;
-                ResolutionContext resolutionContext = new ResolutionContext(DependencyBehavior.Highest, allowPrereleaseVersions, allowUnlisted, VersionConstraints.None);
+                ResolutionContext resolutionContext = new ResolutionContext(DependencyBehavior.Lowest, allowPrereleaseVersions, allowUnlisted, VersionConstraints.None);
                 INuGetProjectContext projectContext = new ProjectContext();
                 SourceRepository sourceRepository = new SourceRepository(packageSource, providers);
 
@@ -119,14 +119,16 @@ namespace Nue.Core
 
                         foreach (var framework in frameworks)
                         {
-                            var frameworkIsAvailable = availableMonikers.Contains(framework);
+                            var libMoniker = (from c in availableMonikers where c.ToLowerInvariant().Contains(framework.ToLowerInvariant()) select c).FirstOrDefault();
+                            bool frameworkIsAvailable = (libMoniker != null);
+
                             ConsoleEx.WriteLine($"Target framework found in package: {frameworkIsAvailable}", ConsoleColor.Yellow);
 
                             if (frameworkIsAvailable)
                             {
                                 Directory.CreateDirectory(finalPath);
 
-                                var binaries = Directory.GetFiles(Path.Combine(pacManPackageLibPath, framework), "*.dll",
+                                var binaries = Directory.GetFiles(Path.Combine(pacManPackageLibPath, libMoniker), "*.dll",
                                     SearchOption.TopDirectoryOnly);
                                 foreach (var binary in binaries)
                                     File.Copy(binary, Path.Combine(finalPath, Path.GetFileName(binary)), true);
@@ -168,10 +170,15 @@ namespace Nue.Core
                         }
                     }
 
-
-                    ConsoleEx.WriteLine($"Deleting {Path.Combine(outputPath, "_pacman")}", ConsoleColor.Red);
-                    Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman"));
-
+                    try
+                    {
+                        ConsoleEx.WriteLine($"Deleting {Path.Combine(outputPath, "_pacman")}", ConsoleColor.Red);
+                        Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman"));
+                    }
+                    catch
+                    {
+                        Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman"));
+                    }
                 }
 
                 return true;
