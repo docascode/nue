@@ -86,6 +86,9 @@ namespace Nue.Core
                         CancellationToken.None);
                     ConsoleEx.WriteLine($"Getting data for {package.Name}...", ConsoleColor.Yellow);
 
+                    //if (package.GetFullName().Equals("Microsoft.Azure.Mobile.Server 1.0.119", StringComparison.CurrentCultureIgnoreCase))
+                    //    throw new Exception();
+
                     ConsoleEx.WriteLine("Downloaded package and dependencies.",ConsoleColor.Green);
 
                     var packageFqn = package.Name + "." + package.Version;
@@ -126,40 +129,52 @@ namespace Nue.Core
 
                             if (frameworkIsAvailable)
                             {
-                                Directory.CreateDirectory(finalPath);
-
                                 var binaries = Directory.GetFiles(Path.Combine(pacManPackageLibPath, libMoniker), "*.dll",
                                     SearchOption.TopDirectoryOnly);
-                                foreach (var binary in binaries)
-                                    File.Copy(binary, Path.Combine(finalPath, Path.GetFileName(binary)), true);
+                                var docFiles = Directory.GetFiles(Path.Combine(pacManPackageLibPath, libMoniker), "*.xml",
+                                    SearchOption.TopDirectoryOnly);
 
-                                foreach (var dependency in dependencyFolders)
+                                // Make sure to only go through any processing if we found binaries.
+                                if (binaries != null && binaries.Count() > 0)
                                 {
-                                    Directory.CreateDirectory(Path.Combine(finalPath, "dependencies"));
+                                    Directory.CreateDirectory(finalPath);
 
-                                    string libFolder = string.Empty;
-                                    string[] dependencyBinaries;
-                                    if (Directory.Exists(libFolder))
+
+
+                                    foreach (var binary in binaries)
+                                        File.Copy(binary, Path.Combine(finalPath, Path.GetFileName(binary)), true);
+
+                                    foreach (var docFile in docFiles)
+                                        File.Copy(docFile, Path.Combine(finalPath, Path.GetFileName(docFile)), true);
+
+                                    foreach (var dependency in dependencyFolders)
                                     {
-                                        libFolder = Path.Combine(dependency, "lib", framework);
-                                    }
-                                    else
-                                    {
-                                        var dependencyLib = Path.Combine(dependency, "lib");
-                                        if (Directory.Exists(dependencyLib))
+                                        Directory.CreateDirectory(Path.Combine(outputPath, "dependencies", package.Moniker));
+
+                                        string libFolder = string.Empty;
+                                        string[] dependencyBinaries;
+                                        if (Directory.Exists(libFolder))
                                         {
-                                            var frameworkDirectory = from c in Directory.GetDirectories(Path.Combine(dependency, "lib")) where c.Contains(dependency) select c;
-                                            libFolder = frameworkDirectory.FirstOrDefault();
+                                            libFolder = Path.Combine(dependency, "lib", framework);
                                         }
-                                    }
+                                        else
+                                        {
+                                            var dependencyLib = Path.Combine(dependency, "lib");
+                                            if (Directory.Exists(dependencyLib))
+                                            {
+                                                var frameworkDirectory = from c in Directory.GetDirectories(Path.Combine(dependency, "lib")) where c.Contains(dependency) select c;
+                                                libFolder = frameworkDirectory.FirstOrDefault();
+                                            }
+                                        }
 
-                                    if (!string.IsNullOrWhiteSpace(libFolder))
-                                    {
-                                        dependencyBinaries = Directory.GetFiles(libFolder, "*.dll",
-                                                SearchOption.TopDirectoryOnly);
+                                        if (!string.IsNullOrWhiteSpace(libFolder))
+                                        {
+                                            dependencyBinaries = Directory.GetFiles(libFolder, "*.dll",
+                                                    SearchOption.TopDirectoryOnly);
 
-                                        foreach (var binary in dependencyBinaries)
-                                            File.Copy(binary, Path.Combine(finalPath, "dependencies", Path.GetFileName(binary)), true);
+                                            foreach (var binary in dependencyBinaries)
+                                                File.Copy(binary, Path.Combine(outputPath, "dependencies", package.Moniker, Path.GetFileName(binary)), true);
+                                        }
                                     }
                                 }
                             }
