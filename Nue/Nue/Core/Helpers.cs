@@ -21,7 +21,7 @@ namespace Nue.Core
                 DeleteDirectory(dir);
             }
 
-            Directory.Delete(target_dir, false);
+            Directory.Delete(target_dir, true);
         }
     }
 }

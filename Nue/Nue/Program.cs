@@ -19,15 +19,14 @@ namespace Nue
                 {
                     var frameworks = options.Framework.Split(',');
 
-                    Task.Run(() => Extractor.DownloadPackages(options.PackagePath, options.OutputPath, frameworks, NugetFeedUrl)).Wait();
+                    var results = Extractor.DownloadPackages(options.PackagePath, options.OutputPath, frameworks, NugetFeedUrl);
+                    Console.WriteLine("Completed: " + results);
                 }
                 else if (options.Mode == "listpac")
                 {
                     Lister.CreatePackageListing(options.Account, options.OutputPath, 3, NewNugetSearchUrl);
                 }
             }
-
-            Console.WriteLine("Completed!");
 
             Console.ReadKey();
         }
