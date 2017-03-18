@@ -34,7 +34,7 @@ namespace Nue
                     Lister.CreatePackageListing(options.Account, options.OutputPath, 3, NewNugetSearchUrl);
                 }
 
-            Console.ReadKey();
+            Console.Read();
         }
     }
 }
