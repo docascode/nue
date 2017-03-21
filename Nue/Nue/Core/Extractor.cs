@@ -228,7 +228,9 @@ namespace Nue.Core
                 String command = $"{nuGetPath}\\nuget.exe";
                 ProcessStartInfo cmdsi = new ProcessStartInfo(command);
                 cmdsi.UseShellExecute = false;
-                cmdsi.Arguments = $"install {package.Name} -Version {package.Version} -Source {Path.GetDirectoryName(packageList)} -OutputDirectory {outputPath + "\\_pacman\\"}";
+                cmdsi.Arguments = $"install {package.Name} -Version {package.Version} -Source {Path.GetDirectoryName(packageList)} -OutputDirectory {outputPath + "\\_pacman"} -Verbosity Detailed";
+
+                Console.WriteLine($"Package source: {Path.GetDirectoryName(packageList)}");
 
                 Process cmd = Process.Start(cmdsi);
                 cmd.WaitForExit();
