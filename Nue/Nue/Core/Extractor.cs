@@ -225,6 +225,7 @@ namespace Nue.Core
                 // Execute a local NuGet install
                 String command = $"{nuGetPath}\\nuget.exe";
                 ProcessStartInfo cmdsi = new ProcessStartInfo(command);
+                cmdsi.UseShellExecute = false;
                 cmdsi.Arguments = $"install {package.Name} -Version {package.Version} -Source {Path.GetDirectoryName(packageList)} -OutputDirectory {outputPath + "\\_pacman\\"}";
 
                 Process cmd = Process.Start(cmdsi);
