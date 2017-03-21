@@ -17,6 +17,7 @@ namespace Nue
         {
             var options = new CommandLineOptions();
             if (Parser.Default.ParseArguments(args, options))
+            {
                 if (options.Mode == "extract")
                 {
                     var frameworks = options.Framework.Split(',');
@@ -33,7 +34,13 @@ namespace Nue
                 {
                     Lister.CreatePackageListing(options.Account, options.OutputPath, 3, NewNugetSearchUrl);
                 }
+                else if (options.Mode =="le")
+                {
+                    var frameworks = options.Framework.Split(',');
 
+                    Extractor.ExtractLocalPackages(options.OutputPath, options.PackagePath, options.NuGetPath, frameworks);
+                }
+            }
             Console.Read();
         }
     }

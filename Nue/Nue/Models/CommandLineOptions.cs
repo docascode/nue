@@ -25,6 +25,9 @@ namespace Nue.Models
         [Option('a', "account", Required = false, HelpText = "Account from which to pull packages.")]
         public string Account { get; set; }
 
+        [Option('n', "nugetpath", Required = false, HelpText = "Path to NuGet.exe (just the folder).")]
+        public string NuGetPath { get; set; }
+
         [ParserState]
         public IParserState LastParserState { get; set; }
 
