@@ -165,7 +165,7 @@ namespace Nue.Core
                 try
                 {
                     ConsoleEx.WriteLine($"Deleting {Path.Combine(outputPath, "_pacman")}", ConsoleColor.Red);
-                    Helpers.DeleteDirectory(pacManPackagePath);
+                    Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman"));
                 }
                 catch
                 {
@@ -339,7 +339,7 @@ namespace Nue.Core
                 try
                 {
                     ConsoleEx.WriteLine($"Deleting {Path.Combine(outputPath, "_pacman")}", ConsoleColor.Red);
-                    Helpers.DeleteDirectory(pacManPackagePath);
+                    Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman"));
                 }
                 catch
                 {
