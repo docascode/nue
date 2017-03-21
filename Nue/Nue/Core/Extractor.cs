@@ -50,8 +50,6 @@ namespace Nue.Core
 
             foreach (var package in packages)
             {
-                Directory.CreateDirectory(outputPath + "\\_pacman");
-
                 ConsoleEx.WriteLine($"Attempting to install: {package.GetFullName()}. Installing...",
                     ConsoleColor.Yellow);
                 var identity = new PackageIdentity(package.Name, NuGetVersion.Parse(package.Version));
@@ -221,6 +219,8 @@ namespace Nue.Core
 
             foreach (var package in packages)
             {
+                Directory.CreateDirectory(outputPath + "\\_pacman");
+
                 ConsoleEx.WriteLine($"Attempting to install: {package.GetFullName()}. Installing...",
                     ConsoleColor.Yellow);
 

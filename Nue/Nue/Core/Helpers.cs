@@ -7,21 +7,24 @@ namespace Nue.Core
         // From: http://stackoverflow.com/a/329502
         public static void DeleteDirectory(string target_dir)
         {
-            string[] files = Directory.GetFiles(target_dir);
-            string[] dirs = Directory.GetDirectories(target_dir);
-
-            foreach (string file in files)
+            if (Directory.Exists(target_dir))
             {
-                File.SetAttributes(file, FileAttributes.Normal);
-                File.Delete(file);
-            }
+                string[] files = Directory.GetFiles(target_dir);
+                string[] dirs = Directory.GetDirectories(target_dir);
 
-            foreach (string dir in dirs)
-            {
-                DeleteDirectory(dir);
-            }
+                foreach (string file in files)
+                {
+                    File.SetAttributes(file, FileAttributes.Normal);
+                    File.Delete(file);
+                }
 
-            Directory.Delete(target_dir, true);
+                foreach (string dir in dirs)
+                {
+                    DeleteDirectory(dir);
+                }
+
+                Directory.Delete(target_dir, true);
+            }
         }
     }
 }
