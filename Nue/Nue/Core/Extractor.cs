@@ -41,7 +41,7 @@ namespace Nue.Core
             NuGetProject project = new FolderNuGetProject(rootPath);
             var packageManager = new NuGetPackageManager(sourceRepositoryProvider, settings, rootPath)
             {
-                PackagesFolderNuGetProject = (FolderNuGetProject) project
+                PackagesFolderNuGetProject = (FolderNuGetProject)project
             };
 
             var resolutionContext = new ResolutionContext(DependencyBehavior.Lowest, false, false, VersionConstraints.None);
@@ -71,8 +71,8 @@ namespace Nue.Core
                     var directories = Directory.GetDirectories(pacManPackageLibPath);
                     var availableMonikers = new List<string>();
                     var dependencyFolders = from c in Directory.GetDirectories(outputPath + "\\_pacman")
-                        where Path.GetFileName(c).ToLower() != packageFqn.ToLower()
-                        select c;
+                                            where Path.GetFileName(c).ToLower() != packageFqn.ToLower()
+                                            select c;
 
                     Console.WriteLine("Currently available lib sets:");
                     ConsoleEx.WriteLine("|__", ConsoleColor.Yellow);
@@ -94,8 +94,8 @@ namespace Nue.Core
                         // First, check if there is an exact match for the moniker.
                         var libMoniker =
                         (from c in availableMonikers
-                            where c.ToLowerInvariant().Equals(framework.ToLowerInvariant())
-                            select c).FirstOrDefault();
+                         where c.ToLowerInvariant().Equals(framework.ToLowerInvariant())
+                         select c).FirstOrDefault();
 
                         var frameworkIsAvailable = libMoniker != null;
 
@@ -103,8 +103,8 @@ namespace Nue.Core
                         if (!frameworkIsAvailable)
                         {
                             libMoniker = (from c in availableMonikers
-                                where c.ToLowerInvariant().Contains(framework.ToLowerInvariant())
-                                select c).FirstOrDefault();
+                                          where c.ToLowerInvariant().Contains(framework.ToLowerInvariant())
+                                          select c).FirstOrDefault();
 
                             frameworkIsAvailable = libMoniker != null;
                         }
@@ -136,66 +136,73 @@ namespace Nue.Core
                                 foreach (var dependency in dependencyFolders)
                                 {
                                     var availableDependencyMonikers = new List<string>();
-                                    foreach (var folder in Directory.GetDirectories(Path.Combine(dependency,"lib")))
+
+                                    if (Directory.Exists(Path.Combine(dependency, "lib")))
                                     {
-                                        var tfmFolder = Path.GetFileName(folder);
-                                        availableDependencyMonikers.Add(tfmFolder);
-                                        ConsoleEx.WriteLine("   |___" + tfmFolder, ConsoleColor.Yellow);
-                                    }
-
-                                    foreach (var dependencyFramework in dependencyFrameworks)
-                                    {
-
-                                        var dLibMoniker =
-                                            (from c in availableDependencyMonikers
-                                             where c.ToLowerInvariant().Equals(dependencyFramework.ToLowerInvariant())
-                                             select c).FirstOrDefault();
-                                        var dFrameworkIsAvailable = dLibMoniker != null;
-
-                                        if (!dFrameworkIsAvailable)
+                                        foreach (var folder in Directory.GetDirectories(Path.Combine(dependency, "lib")))
                                         {
-                                            dLibMoniker = (from c in availableDependencyMonikers
-                                                           where c.ToLowerInvariant().Contains(dependencyFramework.ToLowerInvariant())
-                                                           select c).FirstOrDefault();
-
-                                            dFrameworkIsAvailable = dLibMoniker != null;
+                                            var tfmFolder = Path.GetFileName(folder);
+                                            availableDependencyMonikers.Add(tfmFolder);
+                                            ConsoleEx.WriteLine("   |___" + tfmFolder, ConsoleColor.Yellow);
                                         }
 
-                                        if (dFrameworkIsAvailable)
+                                        foreach (var dependencyFramework in dependencyFrameworks)
                                         {
-                                            Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
-                                                package.Moniker));
 
-                                            var libFolder = string.Empty;
-                                            if (Directory.Exists(Path.Combine(dependency, "lib", dependencyFramework)))
+                                            var dLibMoniker =
+                                                (from c in availableDependencyMonikers
+                                                 where
+                                                 c.ToLowerInvariant().Equals(dependencyFramework.ToLowerInvariant())
+                                                 select c).FirstOrDefault();
+                                            var dFrameworkIsAvailable = dLibMoniker != null;
+
+                                            if (!dFrameworkIsAvailable)
                                             {
-                                                libFolder = Path.Combine(dependency, "lib", dependencyFramework);
+                                                dLibMoniker = (from c in availableDependencyMonikers
+                                                               where
+                                                                   c.ToLowerInvariant()
+                                                                       .Contains(dependencyFramework.ToLowerInvariant())
+                                                               select c).FirstOrDefault();
+
+                                                dFrameworkIsAvailable = dLibMoniker != null;
                                             }
-                                            else
+
+                                            if (dFrameworkIsAvailable)
                                             {
-                                                var dependencyLib = Path.Combine(dependency, "lib");
-                                                if (Directory.Exists(dependencyLib))
+                                                Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
+                                                    package.Moniker));
+
+                                                var libFolder = string.Empty;
+                                                if (Directory.Exists(Path.Combine(dependency, "lib", dependencyFramework)))
                                                 {
-                                                    var frameworkDirectory =
-                                                        from c in
-                                                            Directory.GetDirectories(Path.Combine(dependency, "lib"))
-                                                        where c.Contains(dependency)
-                                                        select c;
-                                                    libFolder = frameworkDirectory.FirstOrDefault();
+                                                    libFolder = Path.Combine(dependency, "lib", dependencyFramework);
                                                 }
+                                                else
+                                                {
+                                                    var dependencyLib = Path.Combine(dependency, "lib");
+                                                    if (Directory.Exists(dependencyLib))
+                                                    {
+                                                        var frameworkDirectory =
+                                                            from c in
+                                                                Directory.GetDirectories(Path.Combine(dependency, "lib"))
+                                                            where c.Contains(dependency)
+                                                            select c;
+                                                        libFolder = frameworkDirectory.FirstOrDefault();
+                                                    }
+                                                }
+
+                                                if (string.IsNullOrWhiteSpace(libFolder)) continue;
+                                                var dependencyBinaries = Directory.GetFiles(libFolder, "*.dll",
+                                                    SearchOption.TopDirectoryOnly);
+
+                                                foreach (var binary in dependencyBinaries)
+                                                    File.Copy(binary,
+                                                        Path.Combine(outputPath, "dependencies", package.Moniker,
+                                                            Path.GetFileName(binary)), true);
+
+                                                // And, no need to scan for more dependencies.
+                                                break;
                                             }
-
-                                            if (string.IsNullOrWhiteSpace(libFolder)) continue;
-                                            var dependencyBinaries = Directory.GetFiles(libFolder, "*.dll",
-                                                SearchOption.TopDirectoryOnly);
-
-                                            foreach (var binary in dependencyBinaries)
-                                                File.Copy(binary,
-                                                    Path.Combine(outputPath, "dependencies", package.Moniker,
-                                                        Path.GetFileName(binary)), true);
-
-                                            // And, no need to scan for more dependencies.
-                                            break;
                                         }
                                     }
                                 }
@@ -363,69 +370,73 @@ namespace Nue.Core
                                 foreach (var dependency in dependencyFolders)
                                 {
                                     var availableDependencyMonikers = new List<string>();
-                                    foreach (var folder in Directory.GetDirectories(Path.Combine(dependency, "lib")))
+
+                                    if (Directory.Exists(Path.Combine(dependency, "lib")))
                                     {
-                                        var tfmFolder = Path.GetFileName(folder);
-                                        availableDependencyMonikers.Add(tfmFolder);
-                                        ConsoleEx.WriteLine("   |___" + tfmFolder, ConsoleColor.Yellow);
-                                    }
-
-                                    foreach (var dependencyFramework in dependencyFrameworks)
-                                    {
-
-                                        var dLibMoniker =
-                                            (from c in availableDependencyMonikers
-                                                where
-                                                    c.ToLowerInvariant().Equals(dependencyFramework.ToLowerInvariant())
-                                                select c).FirstOrDefault();
-                                        var dFrameworkIsAvailable = dLibMoniker != null;
-
-                                        if (!dFrameworkIsAvailable)
+                                        foreach (var folder in Directory.GetDirectories(Path.Combine(dependency, "lib")))
                                         {
-                                            dLibMoniker = (from c in availableDependencyMonikers
-                                                where
-                                                    c.ToLowerInvariant()
-                                                        .Contains(dependencyFramework.ToLowerInvariant())
-                                                select c).FirstOrDefault();
-
-                                            dFrameworkIsAvailable = dLibMoniker != null;
+                                            var tfmFolder = Path.GetFileName(folder);
+                                            availableDependencyMonikers.Add(tfmFolder);
+                                            ConsoleEx.WriteLine("   |___" + tfmFolder, ConsoleColor.Yellow);
                                         }
 
-                                        if (dFrameworkIsAvailable)
+                                        foreach (var dependencyFramework in dependencyFrameworks)
                                         {
 
-                                            Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
-                                                package.Moniker));
+                                            var dLibMoniker =
+                                                (from c in availableDependencyMonikers
+                                                 where
+                                                 c.ToLowerInvariant().Equals(dependencyFramework.ToLowerInvariant())
+                                                 select c).FirstOrDefault();
+                                            var dFrameworkIsAvailable = dLibMoniker != null;
 
-                                            var libFolder = string.Empty;
-                                            if (Directory.Exists(libFolder))
+                                            if (!dFrameworkIsAvailable)
                                             {
-                                                libFolder = Path.Combine(dependency, "lib", framework);
+                                                dLibMoniker = (from c in availableDependencyMonikers
+                                                               where
+                                                                   c.ToLowerInvariant()
+                                                                       .Contains(dependencyFramework.ToLowerInvariant())
+                                                               select c).FirstOrDefault();
+
+                                                dFrameworkIsAvailable = dLibMoniker != null;
                                             }
-                                            else
+
+                                            if (dFrameworkIsAvailable)
                                             {
-                                                var dependencyLib = Path.Combine(dependency, "lib");
-                                                if (Directory.Exists(dependencyLib))
+
+                                                Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
+                                                    package.Moniker));
+
+                                                var libFolder = string.Empty;
+                                                if (Directory.Exists(libFolder))
                                                 {
-                                                    var frameworkDirectory =
-                                                        from c in
-                                                            Directory.GetDirectories(Path.Combine(dependency, "lib"))
-                                                        where c.Contains(dependency)
-                                                        select c;
-                                                    libFolder = frameworkDirectory.FirstOrDefault();
+                                                    libFolder = Path.Combine(dependency, "lib", framework);
                                                 }
+                                                else
+                                                {
+                                                    var dependencyLib = Path.Combine(dependency, "lib");
+                                                    if (Directory.Exists(dependencyLib))
+                                                    {
+                                                        var frameworkDirectory =
+                                                            from c in
+                                                                Directory.GetDirectories(Path.Combine(dependency, "lib"))
+                                                            where c.Contains(dependency)
+                                                            select c;
+                                                        libFolder = frameworkDirectory.FirstOrDefault();
+                                                    }
+                                                }
+
+                                                if (string.IsNullOrWhiteSpace(libFolder)) continue;
+                                                var dependencyBinaries = Directory.GetFiles(libFolder, "*.dll",
+                                                    SearchOption.TopDirectoryOnly);
+
+                                                foreach (var binary in dependencyBinaries)
+                                                    File.Copy(binary,
+                                                        Path.Combine(outputPath, "dependencies", package.Moniker,
+                                                            Path.GetFileName(binary)), true);
+
+                                                break;
                                             }
-
-                                            if (string.IsNullOrWhiteSpace(libFolder)) continue;
-                                            var dependencyBinaries = Directory.GetFiles(libFolder, "*.dll",
-                                                SearchOption.TopDirectoryOnly);
-
-                                            foreach (var binary in dependencyBinaries)
-                                                File.Copy(binary,
-                                                    Path.Combine(outputPath, "dependencies", package.Moniker,
-                                                        Path.GetFileName(binary)), true);
-
-                                            break;
                                         }
                                     }
                                 }
