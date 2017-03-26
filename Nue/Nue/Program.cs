@@ -21,10 +21,11 @@ namespace Nue
                 if (options.Mode == "extract")
                 {
                     var frameworks = options.Framework.Split(',');
+                    var depFrameworks = options.DependencyFramework.Split(',');
 
                     Task.Run(async () =>
                     {
-                        var completed = await Extractor.DownloadPackages(options.PackagePath, options.OutputPath, frameworks,
+                        var completed = await Extractor.DownloadPackages(options.PackagePath, options.OutputPath, frameworks, depFrameworks,
                             NugetFeedUrl);
 
                         Console.Write("Completed successfully: " + completed);
@@ -37,8 +38,9 @@ namespace Nue
                 else if (options.Mode =="le")
                 {
                     var frameworks = options.Framework.Split(',');
+                    var depFrameworks = options.DependencyFramework.Split(',');
 
-                    Extractor.ExtractLocalPackages(options.OutputPath, options.PackagePath, options.NuGetPath, frameworks);
+                    Extractor.ExtractLocalPackages(options.OutputPath, options.PackagePath, options.NuGetPath, frameworks, depFrameworks);
                 }
             }
             Console.Read();
