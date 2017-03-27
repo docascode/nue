@@ -64,7 +64,7 @@ namespace Nue.Core
                 var packageFqn = package.Name + "." + package.Version;
                 var pacManPackagePath = outputPath + "\\_pacman\\" + packageFqn;
                 var pacManPackageLibPath = pacManPackagePath + "\\lib";
-                var finalPath = Path.Combine(outputPath, package.Moniker);
+                var finalPath = Path.Combine(outputPath, package.MonikerBase, package.Moniker);
 
                 if (Directory.Exists(pacManPackageLibPath))
                 {
@@ -256,6 +256,7 @@ namespace Nue.Core
                         var pAtom = new PackageAtom
                         {
                             Moniker = fields[0] + "-" + fields[i],
+                            MonikerBase = fields[0],
                             Name = fields[1],
                             Version = fields[i]
                         };
@@ -298,7 +299,7 @@ namespace Nue.Core
                 var packageFqn = package.Name + "." + package.Version;
                 var pacManPackagePath = outputPath + "\\_pacman\\" + packageFqn;
                 var pacManPackageLibPath = pacManPackagePath + "\\lib";
-                var finalPath = Path.Combine(outputPath, package.Moniker);
+                var finalPath = Path.Combine(outputPath, package.MonikerBase, package.Moniker);
 
                 if (Directory.Exists(pacManPackageLibPath))
                 {
