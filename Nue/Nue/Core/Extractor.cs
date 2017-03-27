@@ -64,7 +64,8 @@ namespace Nue.Core
                 var packageFqn = package.Name + "." + package.Version;
                 var pacManPackagePath = outputPath + "\\_pacman\\" + packageFqn;
                 var pacManPackageLibPath = pacManPackagePath + "\\lib";
-                var finalPath = Path.Combine(outputPath, package.MonikerBase, package.Moniker);
+                var packageContainerPath = Path.Combine(outputPath, package.MonikerBase);
+                var finalPath = Path.Combine(packageContainerPath, package.Moniker);
 
                 if (Directory.Exists(pacManPackageLibPath))
                 {
@@ -169,7 +170,7 @@ namespace Nue.Core
 
                                             if (dFrameworkIsAvailable)
                                             {
-                                                Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
+                                                Directory.CreateDirectory(Path.Combine(packageContainerPath, "dependencies",
                                                     package.Moniker));
 
                                                 var libFolder = string.Empty;
@@ -197,7 +198,7 @@ namespace Nue.Core
 
                                                 foreach (var binary in dependencyBinaries)
                                                     File.Copy(binary,
-                                                        Path.Combine(outputPath, "dependencies", package.Moniker,
+                                                        Path.Combine(packageContainerPath, "dependencies", package.Moniker,
                                                             Path.GetFileName(binary)), true);
 
                                                 // And, no need to scan for more dependencies.
@@ -299,7 +300,8 @@ namespace Nue.Core
                 var packageFqn = package.Name + "." + package.Version;
                 var pacManPackagePath = outputPath + "\\_pacman\\" + packageFqn;
                 var pacManPackageLibPath = pacManPackagePath + "\\lib";
-                var finalPath = Path.Combine(outputPath, package.MonikerBase, package.Moniker);
+                var packageContainerPath = Path.Combine(outputPath, package.MonikerBase);
+                var finalPath = Path.Combine(packageContainerPath, package.Moniker);
 
                 if (Directory.Exists(pacManPackageLibPath))
                 {
@@ -405,7 +407,7 @@ namespace Nue.Core
                                             if (dFrameworkIsAvailable)
                                             {
 
-                                                Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
+                                                Directory.CreateDirectory(Path.Combine(packageContainerPath, "dependencies",
                                                     package.Moniker));
 
                                                 var libFolder = string.Empty;
@@ -433,7 +435,7 @@ namespace Nue.Core
 
                                                 foreach (var binary in dependencyBinaries)
                                                     File.Copy(binary,
-                                                        Path.Combine(outputPath, "dependencies", package.Moniker,
+                                                        Path.Combine(packageContainerPath, "dependencies", package.Moniker,
                                                             Path.GetFileName(binary)), true);
 
                                                 break;
