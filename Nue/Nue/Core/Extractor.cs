@@ -288,7 +288,7 @@ namespace Nue.Core
                 var packageFqn = package.Name + "." + package.Version;
                 var pacManPackagePath = outputPath + "\\_pacman\\" + packageFqn;
                 var pacManPackageLibPath = pacManPackagePath + "\\lib";
-                var packageContainerPath = Path.Combine(outputPath, package.MonikerBase);
+                var packageContainerPath = Path.Combine(outputPath, package.Moniker);
                 var finalPath = Path.Combine(packageContainerPath, package.Moniker);
 
                 if (Directory.Exists(pacManPackageLibPath))
