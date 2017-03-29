@@ -16,11 +16,46 @@ using NuGet.Resolver;
 using NuGet.Versioning;
 using SearchOption = System.IO.SearchOption;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace Nue.Core
 {
     public class Extractor
     {
+        // Determines the best folder match for a libary based on the specified target moniker.
+        private static string GetBestLibMatch(string tfm, string[] folderPaths)
+        {
+            var tfmRegex = new Regex(@"(?<Base>[a-zA-Z]*)(?<Version>[0-9\.0-9]*)");
+            var match = tfmRegex.Match(tfm);
+
+            var tfmBase = match.Groups["Base"].Value;
+            var tfmVersion = match.Groups["Version"].Value;
+
+            var preciseTfmRegex = new Regex($@"(({tfmBase})(?<Version>[0-9\.0-9]+))");
+            Dictionary<string, double> folderAssociations = new Dictionary<string, double>();
+            foreach (var folder in folderPaths)
+            {
+                var token = preciseTfmRegex.Match(folder);
+                if (token.Success)
+                {
+                    var folderVersion = token.Groups["Version"].Value;
+
+                    folderAssociations.Add(folder, double.Parse(folderVersion));
+                }
+            }
+
+            if (folderAssociations.Count > 0)
+            {
+                var closest = folderAssociations.Aggregate((x, y) => Math.Abs(x.Value - double.Parse(tfmVersion)) < Math.Abs(y.Value - double.Parse(tfmVersion)) ? x : y);
+
+                return closest.Key;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
         public static async Task<bool> DownloadPackages(string packagePath, string outputPath, string targetFramework)
         {
             if (string.IsNullOrWhiteSpace(packagePath) || string.IsNullOrWhiteSpace(outputPath) ||
@@ -70,6 +105,8 @@ namespace Nue.Core
                 if (Directory.Exists(pacManPackageLibPath))
                 {
                     var directories = Directory.GetDirectories(pacManPackageLibPath);
+                    var closestDirectory = GetBestLibMatch(targetFramework, directories);
+
                     var availableMonikers = new List<string>();
                     var dependencyFolders = from c in Directory.GetDirectories(outputPath + "\\_pacman")
                                             where Path.GetFileName(c).ToLower() != packageFqn.ToLower()
@@ -90,33 +127,14 @@ namespace Nue.Core
                         ConsoleEx.WriteLine("   |___" + Path.GetFileNameWithoutExtension(dependency),
                             ConsoleColor.Yellow);
 
-                    // First, check if there is an exact match for the moniker.
-                    var libMoniker =
-                    (from c in availableMonikers
-                     where c.ToLowerInvariant().Equals(targetFramework.ToLowerInvariant())
-                     select c).FirstOrDefault();
-
-                    var frameworkIsAvailable = libMoniker != null;
-
-                    // If couldn't find a match, try to find one that contains the moniker.
-                    if (!frameworkIsAvailable)
-                    {
-                        libMoniker = (from c in availableMonikers
-                                      where c.ToLowerInvariant().Contains(targetFramework.ToLowerInvariant())
-                                      select c).FirstOrDefault();
-
-                        frameworkIsAvailable = libMoniker != null;
-                    }
-
-                    ConsoleEx.WriteLine($"Target framework found in package: {frameworkIsAvailable}",
-                        ConsoleColor.Yellow);
+                    var frameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDirectory);
 
                     if (frameworkIsAvailable)
                     {
-                        var binaries = Directory.GetFiles(Path.Combine(pacManPackageLibPath, libMoniker),
+                        var binaries = Directory.GetFiles(closestDirectory,
                             "*.dll",
                             SearchOption.TopDirectoryOnly);
-                        var docFiles = Directory.GetFiles(Path.Combine(pacManPackageLibPath, libMoniker),
+                        var docFiles = Directory.GetFiles(closestDirectory,
                             "*.xml",
                             SearchOption.TopDirectoryOnly);
 
@@ -138,57 +156,17 @@ namespace Nue.Core
 
                                 if (Directory.Exists(Path.Combine(dependency, "lib")))
                                 {
-                                    foreach (var folder in Directory.GetDirectories(Path.Combine(dependency, "lib")))
-                                    {
-                                        var tfmFolder = Path.GetFileName(folder);
-                                        availableDependencyMonikers.Add(tfmFolder);
-                                        ConsoleEx.WriteLine("   |___" + tfmFolder, ConsoleColor.Yellow);
-                                    }
+                                    var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
+                                    var closestDepLibFolder = GetBestLibMatch(targetFramework, dependencyLibFolders);
 
-                                    var dLibMoniker =
-                                        (from c in availableDependencyMonikers
-                                         where
-                                         c.ToLowerInvariant().Equals(targetFramework.ToLowerInvariant())
-                                         select c).FirstOrDefault();
-                                    var dFrameworkIsAvailable = dLibMoniker != null;
-
-                                    if (!dFrameworkIsAvailable)
-                                    {
-                                        dLibMoniker = (from c in availableDependencyMonikers
-                                                       where
-                                                           c.ToLowerInvariant()
-                                                               .Contains(targetFramework.ToLowerInvariant())
-                                                       select c).FirstOrDefault();
-
-                                        dFrameworkIsAvailable = dLibMoniker != null;
-                                    }
+                                    var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
 
                                     if (dFrameworkIsAvailable)
                                     {
                                         Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
                                             package.Moniker));
 
-                                        var libFolder = string.Empty;
-                                        if (Directory.Exists(Path.Combine(dependency, "lib", targetFramework)))
-                                        {
-                                            libFolder = Path.Combine(dependency, "lib", targetFramework);
-                                        }
-                                        else
-                                        {
-                                            var dependencyLib = Path.Combine(dependency, "lib");
-                                            if (Directory.Exists(dependencyLib))
-                                            {
-                                                var frameworkDirectory =
-                                                    from c in
-                                                        Directory.GetDirectories(Path.Combine(dependency, "lib"))
-                                                    where c.Contains(targetFramework)
-                                                    select c;
-                                                libFolder = frameworkDirectory.FirstOrDefault();
-                                            }
-                                        }
-
-                                        if (string.IsNullOrWhiteSpace(libFolder)) continue;
-                                        var dependencyBinaries = Directory.GetFiles(libFolder, "*.dll",
+                                        var dependencyBinaries = Directory.GetFiles(closestDepLibFolder, "*.dll",
                                             SearchOption.TopDirectoryOnly);
 
                                         foreach (var binary in dependencyBinaries)
@@ -292,53 +270,20 @@ namespace Nue.Core
                 if (Directory.Exists(pacManPackageLibPath))
                 {
                     var directories = Directory.GetDirectories(pacManPackageLibPath);
-                    var availableMonikers = new List<string>();
                     var dependencyFolders = from c in Directory.GetDirectories(outputPath + "\\_pacman")
                                             where Path.GetFileName(c).ToLower() != packageFqn.ToLower()
                                             select c;
 
-                    Console.WriteLine("Currently available lib sets:");
-                    ConsoleEx.WriteLine("|__", ConsoleColor.Yellow);
-                    foreach (var folder in directories)
-                    {
-                        var tfmFolder = Path.GetFileName(folder);
-                        availableMonikers.Add(tfmFolder);
-                        ConsoleEx.WriteLine("   |___" + tfmFolder, ConsoleColor.Yellow);
-                    }
+                    var closestFolder = GetBestLibMatch(targetFramework, directories);
 
-                    Console.WriteLine("Package dependencies:");
-                    ConsoleEx.WriteLine("|__", ConsoleColor.Yellow);
-                    foreach (var dependency in dependencyFolders)
-                        ConsoleEx.WriteLine("   |___" + Path.GetFileNameWithoutExtension(dependency),
-                            ConsoleColor.Yellow);
-
-                    // First, check if there is an exact match for the moniker.
-                    var libMoniker =
-                    (from c in availableMonikers
-                     where c.ToLowerInvariant().Equals(targetFramework.ToLowerInvariant())
-                     select c).FirstOrDefault();
-
-                    var frameworkIsAvailable = libMoniker != null;
-
-                    // If couldn't find a match, try to find one that contains the moniker.
-                    if (!frameworkIsAvailable)
-                    {
-                        libMoniker = (from c in availableMonikers
-                                      where c.ToLowerInvariant().Contains(targetFramework.ToLowerInvariant())
-                                      select c).FirstOrDefault();
-
-                        frameworkIsAvailable = libMoniker != null;
-                    }
-
-                    ConsoleEx.WriteLine($"Target framework found in package: {frameworkIsAvailable}",
-                        ConsoleColor.Yellow);
+                    var frameworkIsAvailable = !string.IsNullOrWhiteSpace(closestFolder);
 
                     if (frameworkIsAvailable)
                     {
-                        var binaries = Directory.GetFiles(Path.Combine(pacManPackageLibPath, libMoniker),
+                        var binaries = Directory.GetFiles(closestFolder,
                             "*.dll",
                             SearchOption.TopDirectoryOnly);
-                        var docFiles = Directory.GetFiles(Path.Combine(pacManPackageLibPath, libMoniker),
+                        var docFiles = Directory.GetFiles(closestFolder,
                             "*.xml",
                             SearchOption.TopDirectoryOnly);
 
@@ -360,30 +305,9 @@ namespace Nue.Core
 
                                 if (Directory.Exists(Path.Combine(dependency, "lib")))
                                 {
-                                    foreach (var folder in Directory.GetDirectories(Path.Combine(dependency, "lib")))
-                                    {
-                                        var tfmFolder = Path.GetFileName(folder);
-                                        availableDependencyMonikers.Add(tfmFolder);
-                                        ConsoleEx.WriteLine("   |___" + tfmFolder, ConsoleColor.Yellow);
-                                    }
-
-                                    var dLibMoniker =
-                                        (from c in availableDependencyMonikers
-                                         where
-                                         c.ToLowerInvariant().Equals(targetFramework.ToLowerInvariant())
-                                         select c).FirstOrDefault();
-                                    var dFrameworkIsAvailable = dLibMoniker != null;
-
-                                    if (!dFrameworkIsAvailable)
-                                    {
-                                        dLibMoniker = (from c in availableDependencyMonikers
-                                                       where
-                                                           c.ToLowerInvariant()
-                                                               .Contains(targetFramework.ToLowerInvariant())
-                                                       select c).FirstOrDefault();
-
-                                        dFrameworkIsAvailable = dLibMoniker != null;
-                                    }
+                                    var depLibraries = Directory.GetDirectories(Path.Combine(dependency, "lib"));
+                                    var closestDepLibFolder = GetBestLibMatch(targetFramework, depLibraries);
+                                    var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
 
                                     if (dFrameworkIsAvailable)
                                     {
@@ -391,28 +315,8 @@ namespace Nue.Core
                                         Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
                                             package.Moniker));
 
-                                        var libFolder = string.Empty;
-                                        if (Directory.Exists(libFolder))
-                                        {
-                                            libFolder = Path.Combine(dependency, "lib", targetFramework);
-                                        }
-                                        else
-                                        {
-                                            var dependencyLib = Path.Combine(dependency, "lib");
-                                            if (Directory.Exists(dependencyLib))
-                                            {
-                                                var frameworkDirectory =
-                                                    from c in
-                                                        Directory.GetDirectories(Path.Combine(dependency, "lib"))
-                                                    where c.Contains(targetFramework)
-                                                    select c;
-                                                libFolder = frameworkDirectory.FirstOrDefault();
-                                            }
-                                        }
-
-                                        if (string.IsNullOrWhiteSpace(libFolder)) continue;
-                                        var dependencyBinaries = Directory.GetFiles(libFolder, "*.dll",
-                                            SearchOption.TopDirectoryOnly);
+                                        var dependencyBinaries = Directory.GetFiles(closestDepLibFolder, "*.dll",
+                                             SearchOption.TopDirectoryOnly);
 
                                         foreach (var binary in dependencyBinaries)
                                             File.Copy(binary,
