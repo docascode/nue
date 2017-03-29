@@ -8,8 +8,6 @@ namespace Nue
 {
     internal class Program
     {
-        private const string NugetFeedUrl = "https://packages.nuget.org/api/v2";
-
         private const string NewNugetSearchUrl =
             "https://api-v2v3search-0.nuget.org/query?q=owners:{0}&prerelease=false";
 
@@ -21,12 +19,10 @@ namespace Nue
                 if (options.Mode == "extract")
                 {
                     var frameworks = options.Framework.Split(',');
-                    var depFrameworks = options.DependencyFramework.Split(',');
 
                     Task.Run(async () =>
                     {
-                        var completed = await Extractor.DownloadPackages(options.PackagePath, options.OutputPath, frameworks, depFrameworks,
-                            NugetFeedUrl);
+                        var completed = await Extractor.DownloadPackages(options.PackagePath, options.OutputPath, options.Framework);
 
                         Console.Write("Completed successfully: " + completed);
                     }).Wait();
@@ -37,10 +33,7 @@ namespace Nue
                 }
                 else if (options.Mode =="le")
                 {
-                    var frameworks = options.Framework.Split(',');
-                    var depFrameworks = options.DependencyFramework.Split(',');
-
-                    Extractor.ExtractLocalPackages(options.OutputPath, options.PackagePath, options.NuGetPath, frameworks, depFrameworks);
+                    Extractor.ExtractLocalPackages(options.OutputPath, options.PackagePath, options.NuGetPath, options.Framework);
                 }
             }
             Console.Read();

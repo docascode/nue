@@ -153,6 +153,7 @@
     <Compile Include="Models\NuGetDataContainer.cs" />
     <Compile Include="Models\PackageAtom.cs" />
     <Compile Include="Models\ProjectContext.cs" />
+    <Compile Include="Models\TargetedFolderNuGetProject.cs" />
     <Compile Include="Models\TfmAtom.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
