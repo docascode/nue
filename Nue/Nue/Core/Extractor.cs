@@ -66,7 +66,6 @@ namespace Nue.Core
                 var pacManPackagePath = outputPath + "\\_pacman\\" + packageFqn;
                 var pacManPackageLibPath = pacManPackagePath + "\\lib";
                 var packageContainerPath = Path.Combine(outputPath, package.Moniker);
-                var finalPath = Path.Combine(packageContainerPath, package.Moniker);
 
                 if (Directory.Exists(pacManPackageLibPath))
                 {
@@ -124,14 +123,14 @@ namespace Nue.Core
                         // Make sure to only go through any processing if we found binaries.
                         if (binaries != null && binaries.Any())
                         {
-                            Directory.CreateDirectory(finalPath);
+                            Directory.CreateDirectory(packageContainerPath);
 
 
                             foreach (var binary in binaries)
-                                File.Copy(binary, Path.Combine(finalPath, Path.GetFileName(binary)), true);
+                                File.Copy(binary, Path.Combine(packageContainerPath, Path.GetFileName(binary)), true);
 
                             foreach (var docFile in docFiles)
-                                File.Copy(docFile, Path.Combine(finalPath, Path.GetFileName(docFile)), true);
+                                File.Copy(docFile, Path.Combine(packageContainerPath, Path.GetFileName(docFile)), true);
 
                             foreach (var dependency in dependencyFolders)
                             {
@@ -289,7 +288,6 @@ namespace Nue.Core
                 var pacManPackagePath = outputPath + "\\_pacman\\" + packageFqn;
                 var pacManPackageLibPath = pacManPackagePath + "\\lib";
                 var packageContainerPath = Path.Combine(outputPath, package.Moniker);
-                var finalPath = Path.Combine(packageContainerPath, package.Moniker);
 
                 if (Directory.Exists(pacManPackageLibPath))
                 {
@@ -347,14 +345,14 @@ namespace Nue.Core
                         // Make sure to only go through any processing if we found binaries.
                         if (binaries != null && binaries.Any())
                         {
-                            Directory.CreateDirectory(finalPath);
+                            Directory.CreateDirectory(packageContainerPath);
 
 
                             foreach (var binary in binaries)
-                                File.Copy(binary, Path.Combine(finalPath, Path.GetFileName(binary)), true);
+                                File.Copy(binary, Path.Combine(packageContainerPath, Path.GetFileName(binary)), true);
 
                             foreach (var docFile in docFiles)
-                                File.Copy(docFile, Path.Combine(finalPath, Path.GetFileName(docFile)), true);
+                                File.Copy(docFile, Path.Combine(packageContainerPath, Path.GetFileName(docFile)), true);
 
                             foreach (var dependency in dependencyFolders)
                             {
