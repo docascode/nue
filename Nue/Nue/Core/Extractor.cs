@@ -30,41 +30,51 @@ namespace Nue.Core
 
             var tfmBase = match.Groups["Base"].Value;
             var tfmVersion = match.Groups["Version"].Value;
+            string folder = string.Empty;
 
-            var exactMatch = new Regex($@"({tfm})[0-9\.0-9]*");
+            // Look for a folder that matches exactly the TFM.
+            var exactMatch = (from c in folderPaths
+                where Path.GetDirectoryName(c).Equals(tfm, StringComparison.InvariantCultureIgnoreCase)
+                select c).FirstOrDefault();
+
+            // If we found one, we should just return it.
+            if (exactMatch != null)
+                return exactMatch;
+
+            // As an example, if the TFM is net45, this should cover everything like:
+            // net45, net451, net452
+            var lenientMatch = new Regex($@"^(({tfm})(?<Version>[0-9\.0-9]*))$");
+            folder = GetWinningFolder(folderPaths, lenientMatch);
+
+            if (!string.IsNullOrWhiteSpace(folder)) return folder;
+            // Now we just match the base, e.g. for net we should get:
+            // net45, net46, net461
+            var baseMatch = new Regex($@"^(({tfmBase})(?<Version>[0-9\.0-9]*))$");
+            folder = GetWinningFolder(folderPaths, baseMatch);
+
+            if (!string.IsNullOrWhiteSpace(folder)) return folder;
+            // Now do an even more lenient match within 
             var preciseTfmRegex = new Regex($@"(({tfmBase})(?<Version>[0-9\.0-9]+))");
-            Dictionary<string, double> folderAssociations = new Dictionary<string, double>();
+            folder = GetWinningFolder(folderPaths, preciseTfmRegex);
 
-            foreach (var folder in folderPaths)
+            return folder;
+        }
+
+        private static string GetWinningFolder(string[] folders, Regex regex)
+        {
+            var folderAssociations = new Dictionary<string, double>();
+            foreach (var folder in folders)
             {
-                var token = exactMatch.Match(folder);
-                if (token.Success)
-                {
-                    return folder;
-                }
+                var token = regex.Match(folder);
+                if (!token.Success) continue;
+                var folderVersion = token.Groups["Version"].Value;
+
+                folderAssociations.Add(folder, double.Parse(folderVersion));
             }
 
-            foreach (var folder in folderPaths)
-            {
-                var token = preciseTfmRegex.Match(folder);
-                if (token.Success)
-                {
-                    var folderVersion = token.Groups["Version"].Value;
-
-                    folderAssociations.Add(folder, double.Parse(folderVersion));
-                }
-            }
-
-            if (folderAssociations.Count > 0)
-            {
-                var closest = folderAssociations.Aggregate((x, y) => Math.Abs(x.Value - double.Parse(tfmVersion)) < Math.Abs(y.Value - double.Parse(tfmVersion)) ? x : y);
-
-                return closest.Key;
-            }
-            else
-            {
-                return string.Empty;
-            }
+            if (folderAssociations.Count <= 0) return string.Empty;
+            var topItem = (from c in folderAssociations orderby c.Value descending select c).First();
+            return topItem.Key;
         }
 
         public static async Task<bool> DownloadPackages(string packagePath, string outputPath, string targetFramework)
