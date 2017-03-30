@@ -34,7 +34,7 @@ namespace Nue.Core
 
             // Look for a folder that matches exactly the TFM.
             var exactMatch = (from c in folderPaths
-                where Path.GetDirectoryName(c).Equals(tfm, StringComparison.InvariantCultureIgnoreCase)
+                where Path.GetFileName(c).Equals(tfm, StringComparison.InvariantCultureIgnoreCase)
                 select c).FirstOrDefault();
 
             // If we found one, we should just return it.
@@ -43,18 +43,18 @@ namespace Nue.Core
 
             // As an example, if the TFM is net45, this should cover everything like:
             // net45, net451, net452
-            var lenientMatch = new Regex($@"^(({tfm})(?<Version>[0-9\.0-9]*))$", RegexOptions.IgnoreCase);
+            var lenientMatch = new Regex($@"^(?<full>(?<base>{tfm})(?<version>[0-9\.0-9]*))$", RegexOptions.IgnoreCase);
             folder = GetWinningFolder(folderPaths, lenientMatch);
 
             if (!string.IsNullOrWhiteSpace(folder)) return folder;
             // Now we just match the base, e.g. for net we should get:
             // net45, net46, net461
-            var baseMatch = new Regex($@"^(({tfmBase})(?<Version>[0-9\.0-9]*))$", RegexOptions.IgnoreCase);
+            var baseMatch = new Regex($@"^(?<full>(?<base>{tfmBase})(?<version>[0-9\.0-9]*))$", RegexOptions.IgnoreCase);
             folder = GetWinningFolder(folderPaths, baseMatch);
 
             if (!string.IsNullOrWhiteSpace(folder)) return folder;
             // Now do an even more lenient match within 
-            var preciseTfmRegex = new Regex($@"(({tfmBase})(?<Version>[0-9\.0-9]+))",RegexOptions.IgnoreCase);
+            var preciseTfmRegex = new Regex($@"(?<full>(?<version>{tfmBase})(?<version>[0-9\.0-9]+))",RegexOptions.IgnoreCase);
             folder = GetWinningFolder(folderPaths, preciseTfmRegex);
 
             return folder;
@@ -68,7 +68,7 @@ namespace Nue.Core
                 var exactFolderName = Path.GetFileName(folder);
                 var token = regex.Match(exactFolderName);
                 if (!token.Success) continue;
-                var folderVersion = token.Groups["Version"].Value;
+                var folderVersion = token.Groups["version"].Value;
 
                 folderAssociations.Add(folder, double.Parse(folderVersion));
             }
