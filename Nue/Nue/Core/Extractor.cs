@@ -31,8 +31,19 @@ namespace Nue.Core
             var tfmBase = match.Groups["Base"].Value;
             var tfmVersion = match.Groups["Version"].Value;
 
+            var exactMatch = new Regex($"({tfm})");
             var preciseTfmRegex = new Regex($@"(({tfmBase})(?<Version>[0-9\.0-9]+))");
             Dictionary<string, double> folderAssociations = new Dictionary<string, double>();
+
+            foreach (var folder in folderPaths)
+            {
+                var token = exactMatch.Match(folder);
+                if (token.Success)
+                {
+                    return folder;
+                }
+            }
+
             foreach (var folder in folderPaths)
             {
                 var token = preciseTfmRegex.Match(folder);
