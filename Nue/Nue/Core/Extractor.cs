@@ -43,18 +43,18 @@ namespace Nue.Core
 
             // As an example, if the TFM is net45, this should cover everything like:
             // net45, net451, net452
-            var lenientMatch = new Regex($@"^(({tfm})(?<Version>[0-9\.0-9]*))$");
+            var lenientMatch = new Regex($@"^(({tfm})(?<Version>[0-9\.0-9]*))$", RegexOptions.IgnoreCase);
             folder = GetWinningFolder(folderPaths, lenientMatch);
 
             if (!string.IsNullOrWhiteSpace(folder)) return folder;
             // Now we just match the base, e.g. for net we should get:
             // net45, net46, net461
-            var baseMatch = new Regex($@"^(({tfmBase})(?<Version>[0-9\.0-9]*))$");
+            var baseMatch = new Regex($@"^(({tfmBase})(?<Version>[0-9\.0-9]*))$", RegexOptions.IgnoreCase);
             folder = GetWinningFolder(folderPaths, baseMatch);
 
             if (!string.IsNullOrWhiteSpace(folder)) return folder;
             // Now do an even more lenient match within 
-            var preciseTfmRegex = new Regex($@"(({tfmBase})(?<Version>[0-9\.0-9]+))");
+            var preciseTfmRegex = new Regex($@"(({tfmBase})(?<Version>[0-9\.0-9]+))",RegexOptions.IgnoreCase);
             folder = GetWinningFolder(folderPaths, preciseTfmRegex);
 
             return folder;
@@ -65,7 +65,8 @@ namespace Nue.Core
             var folderAssociations = new Dictionary<string, double>();
             foreach (var folder in folders)
             {
-                var token = regex.Match(folder);
+                var exactFolderName = Path.GetFileName(folder);
+                var token = regex.Match(exactFolderName);
                 if (!token.Success) continue;
                 var folderVersion = token.Groups["Version"].Value;
 
