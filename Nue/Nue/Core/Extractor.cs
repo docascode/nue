@@ -49,7 +49,7 @@ namespace Nue.Core
             if (!string.IsNullOrWhiteSpace(folder)) return folder;
             // Now we just match the base, e.g. for net we should get:
             // net45, net46, net461
-            var baseMatch = new Regex($@"^(?<full>(?<base>{tfmBase})(?<version>[0-9\.0-9]*))$", RegexOptions.IgnoreCase);
+            var baseMatch = new Regex($@"^(?<full>(?<base>{tfmBase}[a-z]*)(?<version>[0-9\.0-9]*))$", RegexOptions.IgnoreCase);
             folder = GetWinningFolder(folderPaths, baseMatch);
 
             if (!string.IsNullOrWhiteSpace(folder)) return folder;
