@@ -31,9 +31,10 @@ namespace Nue
                 {
                     Lister.CreatePackageListing(options.Account, options.OutputPath, 3, NewNugetSearchUrl);
                 }
-                else if (options.Mode =="le")
+                else if (options.Mode == "le")
                 {
-                    Extractor.ExtractLocalPackages(options.OutputPath, options.PackagePath, options.NuGetPath, options.Framework);
+                    // PackagePath = Path to package list
+                    Extractor.ExtractLocalPackages(options.OutputPath, options.PackagePath, options.NuGetPath, options.Framework, options.PackageSource);
                 }
             }
             Console.Read();

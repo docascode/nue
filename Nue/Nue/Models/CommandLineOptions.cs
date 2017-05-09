@@ -28,6 +28,9 @@ namespace Nue.Models
         [Option('n', "nugetpath", Required = false, HelpText = "Path to NuGet.exe (just the folder).")]
         public string NuGetPath { get; set; }
 
+        [Option('s', "packagesource", Required = false, HelpText = "Path to NuGet.exe (just the folder).")]
+        public string PackageSource { get; set; }
+
         [ParserState]
         public IParserState LastParserState { get; set; }
 
