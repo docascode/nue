@@ -258,7 +258,7 @@ namespace Nue.Core
             return packages;
         }
 
-        public static bool ExtractLocalPackages(string outputPath, string packageList, string nuGetPath, string targetFramework)
+        public static bool ExtractLocalPackages(string outputPath, string packageList, string nuGetPath, string targetFramework, string packageSource)
         {
             var packages = GetPackagesFromFile(packageList);
 
@@ -273,9 +273,9 @@ namespace Nue.Core
                 String command = $"{nuGetPath}\\nuget.exe";
                 ProcessStartInfo cmdsi = new ProcessStartInfo(command);
                 cmdsi.UseShellExecute = false;
-                cmdsi.Arguments = $"install {package.Name} -Version {package.Version} -Source {Path.GetDirectoryName(packageList)} -OutputDirectory {outputPath + "\\_pacman"} -Verbosity Detailed -DisableParallelProcessing -FallbackSource https://api.nuget.org/v3/index.json";
+                cmdsi.Arguments = $"install {package.Name} -Version {package.Version} -Source {packageSource} -OutputDirectory {outputPath + "\\_pacman"} -Verbosity Detailed -DisableParallelProcessing -FallbackSource https://api.nuget.org/v3/index.json";
 
-                Console.WriteLine($"Package source: {Path.GetDirectoryName(packageList)}");
+                Console.WriteLine($"Package source: {packageSource}");
 
                 Process cmd = Process.Start(cmdsi);
                 cmd.WaitForExit();
