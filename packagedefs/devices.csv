@@ -1,3 +1,3 @@
 botbuilder,Microsoft.Bot.Builder,3.8.0
-botconnector,Microsoft.Bot.Connector,1.1.0.0
 botbuilder-rtmcalling,Microsoft.Bot.Builder.RealTimeMediaCalling,1.0.4-alpha
+skypebotsmedia,Microsoft.Skype.Bots.Media,1.5.0.1177-alpha

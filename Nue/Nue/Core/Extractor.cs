@@ -163,10 +163,9 @@ namespace Nue.Core
                             SearchOption.TopDirectoryOnly);
 
                         // Make sure to only go through any processing if we found binaries.
-                        if (binaries != null && binaries.Any())
+                        if (binaries.Any())
                         {
                             Directory.CreateDirectory(packageContainerPath);
-
 
                             foreach (var binary in binaries)
                                 File.Copy(binary, Path.Combine(packageContainerPath, Path.GetFileName(binary)), true);
@@ -205,7 +204,55 @@ namespace Nue.Core
                     }
                     else
                     {
-                        Console.WriteLine("Skipping the package because framework wasn't found.");
+                        // We could not find a closest folder, so let's just check in the root.
+                        var binaries = Directory.GetFiles(pacManPackageLibPath,
+                            "*.dll",
+                            SearchOption.TopDirectoryOnly);
+                        var docFiles = Directory.GetFiles(pacManPackageLibPath,
+                            "*.xml",
+                            SearchOption.TopDirectoryOnly);
+
+                        // Make sure to only go through any processing if we found binaries.
+                        if (binaries.Any())
+                        {
+                            Directory.CreateDirectory(packageContainerPath);
+
+
+                            foreach (var binary in binaries)
+                                File.Copy(binary, Path.Combine(packageContainerPath, Path.GetFileName(binary)), true);
+
+                            foreach (var docFile in docFiles)
+                                File.Copy(docFile, Path.Combine(packageContainerPath, Path.GetFileName(docFile)), true);
+
+                            foreach (var dependency in dependencyFolders)
+                            {
+                                var availableDependencyMonikers = new List<string>();
+
+                                if (Directory.Exists(Path.Combine(dependency, "lib")))
+                                {
+                                    var depLibraries = Directory.GetDirectories(Path.Combine(dependency, "lib"));
+                                    var closestDepLibFolder = GetBestLibMatch(targetFramework, depLibraries);
+                                    var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
+
+                                    if (dFrameworkIsAvailable)
+                                    {
+
+                                        Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
+                                            package.Moniker));
+
+                                        var dependencyBinaries = Directory.GetFiles(closestDepLibFolder, "*.dll",
+                                            SearchOption.TopDirectoryOnly);
+
+                                        foreach (var binary in dependencyBinaries)
+                                            File.Copy(binary,
+                                                Path.Combine(outputPath, "dependencies", package.Moniker,
+                                                    Path.GetFileName(binary)), true);
+
+                                    }
+
+                                }
+                            }
+                        }
                     }
                 }
 
