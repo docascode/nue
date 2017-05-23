@@ -101,7 +101,7 @@ namespace Nue.Core
                 PackagesFolderNuGetProject = (FolderNuGetProject)project
             };
 
-            var resolutionContext = new ResolutionContext(DependencyBehavior.Highest, true, true, VersionConstraints.None);
+            var resolutionContext = new ResolutionContext(DependencyBehavior.Lowest, true, true, VersionConstraints.None);
 
             INuGetProjectContext projectContext = new ProjectContext();
             var sourceRepository = new SourceRepository(packageSource, providers);

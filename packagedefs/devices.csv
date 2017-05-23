@@ -1,1 +1,3 @@
-mgmtsql,Microsoft.Azure.Management.Sql,1.2.0-preview
+botbuilder,Microsoft.Bot.Builder,3.8.0
+botconnector,Microsoft.Bot.Connector,1.1.0.0
+botbuilder-rtmcalling,Microsoft.Bot.Builder.RealTimeMediaCalling,1.0.4-alpha
