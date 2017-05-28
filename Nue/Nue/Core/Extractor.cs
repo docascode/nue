@@ -108,6 +108,9 @@ namespace Nue.Core
 
             foreach (var package in packages)
             {
+                // Package resolver that will be used to get the full path to binaries.
+                IResolver resolver;
+
                 ConsoleEx.WriteLine($"Attempting to install: {package.GetFullName()}. Installing...",
                     ConsoleColor.Yellow);
                 var identity = new PackageIdentity(package.Name, NuGetVersion.Parse(package.Version));
@@ -115,9 +118,8 @@ namespace Nue.Core
                     identity, resolutionContext, projectContext, sourceRepository,
                     null, // This is a list of secondary source respositories, probably empty
                     CancellationToken.None);
-                ConsoleEx.WriteLine($"Getting data for {package.Name}...", ConsoleColor.Yellow);
 
-                ConsoleEx.WriteLine("Downloaded package and dependencies.", ConsoleColor.Green);
+                ConsoleEx.WriteLine($"Getting data for {package.Name}...", ConsoleColor.Yellow);
 
                 var packageFqn = package.Name + "." + package.Version;
                 var pacManPackagePath = outputPath + "\\_pacman\\" + packageFqn;
@@ -128,6 +130,8 @@ namespace Nue.Core
                 // another team.
                 if (Directory.Exists(pacManPackageLibPath) && !Directory.Exists(packageContainerPath))
                 {
+                    // Directory exists, so we should proceed to package extraction.
+                    
                     var directories = Directory.GetDirectories(pacManPackageLibPath);
                     var closestDirectory = GetBestLibMatch(targetFramework, directories);
 
@@ -298,6 +302,32 @@ namespace Nue.Core
                             Name = fields[1],
                             Version = fields[i]
                         };
+
+                        // Property bag will be formatted like:
+                        // [property1=value1,property2=value2]PackageId
+                        var propertyBagRegex = @"(\[.+\])";
+                        Regex formalizedRegEx = new Regex(propertyBagRegex);
+                        var match = formalizedRegEx.Match(pAtom.Name);
+
+                        if (match.Success)
+                        {
+                            // There seems to be a property bag attached to the name.
+                            var rawPropertyBag = match.Value.Replace("[","").Replace("]","").Trim();
+                            if (!string.IsNullOrWhiteSpace(rawPropertyBag))
+                            {
+                                // Normalize the package name without the property bag.
+                                pAtom.Name = pAtom.Name.Replace(match.Value, "");
+                                pAtom.CustomPropertyBag = new Dictionary<string, string>();
+
+                                // Avoiding the case of empty property bag, looks like in this case we are good.
+                                var properties = rawPropertyBag.Split(new char[] { ';' });
+                                foreach(var property in properties)
+                                {
+                                    var splitProperty = property.Split(new char[] { '=' });
+                                    pAtom.CustomPropertyBag.Add(splitProperty[0], splitProperty[1]);
+                                }
+                            }
+                        }
 
                         packages.Add(pAtom);
                     }

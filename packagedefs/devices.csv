@@ -1,3 +1,1 @@
-botbuilder,Microsoft.Bot.Builder,3.8.0
-botbuilder-rtmcalling,Microsoft.Bot.Builder.RealTimeMediaCalling,1.0.4-alpha
-skypebotsmedia,Microsoft.Skype.Bots.Media,1.5.0.1177-alpha
+xboxlive,[resolver=xbl;target=x64;ide=v140;build=release]Microsoft.Xbox.Live.SDK.WinRT.UWP,2017.5.20170517.1

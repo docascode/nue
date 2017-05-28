@@ -147,8 +147,11 @@
     <Compile Include="Core\ConsoleEx.cs" />
     <Compile Include="Core\Extractor.cs" />
     <Compile Include="Core\Helpers.cs" />
+    <Compile Include="Core\IResolver.cs" />
     <Compile Include="Core\Lister.cs" />
+    <Compile Include="Interfaces\IPackageResolver.cs" />
     <Compile Include="Models\CommandLineOptions.cs" />
+    <Compile Include="Models\DefaultResolver.cs" />
     <Compile Include="Models\MachineWideSettings.cs" />
     <Compile Include="Models\NuGetDataContainer.cs" />
     <Compile Include="Models\PackageAtom.cs" />
