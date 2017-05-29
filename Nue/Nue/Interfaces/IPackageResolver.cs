@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Nue.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Nue.Interfaces
 {
@@ -6,6 +8,6 @@ namespace Nue.Interfaces
     {
         IDictionary<string, string> Parameters { get; set; }
 
-        string GetBinary(string path);
+        Task<bool> CopyBinarySet(PackageAtom package, string outputPath);
     }
 }
