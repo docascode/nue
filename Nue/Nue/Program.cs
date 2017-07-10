@@ -13,8 +13,7 @@ namespace Nue
 
         private static void Main(string[] args)
         {
-            var options = new CommandLineOptions();
-            if (Parser.Default.ParseArguments(args, options))
+            Parser.Default.ParseArguments<CommandLineOptions>(args).WithParsed(options =>
             {
                 if (options.Mode == "extract")
                 {
@@ -36,7 +35,8 @@ namespace Nue
                     // PackagePath = Path to package list
                     Extractor.ExtractLocalPackages(options.OutputPath, options.PackagePath, options.NuGetPath, options.Framework, options.PackageSource);
                 }
-            }
+            });
+
             Console.Read();
         }
     }

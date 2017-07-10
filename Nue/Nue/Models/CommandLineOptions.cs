@@ -30,14 +30,5 @@ namespace Nue.Models
 
         [Option('s', "packagesource", Required = false, HelpText = "Path to NuGet.exe (just the folder).")]
         public string PackageSource { get; set; }
-
-        [ParserState]
-        public IParserState LastParserState { get; set; }
-
-        [HelpOption]
-        public string GetUsage()
-        {
-            return HelpText.AutoBuild(this, (HelpText current) => HelpText.DefaultParsingErrorsHandler(this, current));
-        }
     }
 }
