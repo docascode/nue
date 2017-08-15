@@ -124,7 +124,8 @@ namespace Nue.Models
                         {
                             var availableDependencyMonikers = new List<string>();
 
-                            if (Directory.Exists(Path.Combine(dependency, "lib")))
+                            var targetPath = Path.Combine(dependency, "lib");
+                            if (Directory.Exists(targetPath) && Directory.GetFiles(targetPath,"*.dll",SearchOption.AllDirectories).Count() > 0)
                             {
                                 var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
                                 var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
@@ -152,6 +153,7 @@ namespace Nue.Models
                 else
                 {
                     // We could not find a closest folder, so let's just check in the root.
+
                     var binaries = Directory.GetFiles(pacManPackageLibPath,
                         "*.dll",
                         SearchOption.TopDirectoryOnly);
@@ -164,7 +166,6 @@ namespace Nue.Models
                     {
                         Directory.CreateDirectory(packageContainerPath);
 
-
                         foreach (var binary in binaries)
                             File.Copy(binary, Path.Combine(packageContainerPath, Path.GetFileName(binary)), true);
 
@@ -175,15 +176,16 @@ namespace Nue.Models
                         {
                             var availableDependencyMonikers = new List<string>();
 
-                            if (Directory.Exists(Path.Combine(dependency, "lib")))
+                            var targetPath = Path.Combine(dependency, "lib");
+                            if (Directory.Exists(targetPath) && Directory.GetFiles(targetPath, "*.dll", SearchOption.AllDirectories).Count() > 0)
                             {
-                                var depLibraries = Directory.GetDirectories(Path.Combine(dependency, "lib"));
-                                var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], depLibraries);
+                                var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
+                                var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
+
                                 var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
 
                                 if (dFrameworkIsAvailable)
                                 {
-
                                     Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
                                         package.Moniker));
 
@@ -196,7 +198,6 @@ namespace Nue.Models
                                                 Path.GetFileName(binary)), true);
 
                                 }
-
                             }
                         }
                     }
