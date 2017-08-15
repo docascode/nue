@@ -24,7 +24,7 @@ namespace Nue.Models
 
         public async Task<bool> CopyBinarySet(PackageAtom package, string outputPath)
         {
-            this.Parameters = new Dictionary<string, string>(package.CustomPropertyBag);
+            Parameters = new Dictionary<string, string>(package.CustomPropertyBag);
 
             var providers = new List<Lazy<INuGetResourceProvider>>();
             providers.AddRange(Repository.Provider.GetCoreV3()); // Add v3 API support

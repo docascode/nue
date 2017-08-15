@@ -48,6 +48,10 @@ namespace Nue.Core
                                 }
                         }
                     }
+                    else
+                    {
+                        resolver = new DefaultResolver();
+                    }
                 }
                 else
                 {
@@ -55,8 +59,11 @@ namespace Nue.Core
                     resolver = new DefaultResolver();
                 }
 
-                // Inject the TFM into the resolver.
-                package.CustomPropertyBag.Add("tfm", targetFramework);
+                // Inject the TFM into the resolver if none was specified for the package.
+                if (!package.CustomPropertyBag.ContainsKey("tfm"))
+                {
+                    package.CustomPropertyBag.Add("tfm", targetFramework);
+                }
 
                 var binaries = await resolver.CopyBinarySet(package,outputPath);
 
