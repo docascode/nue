@@ -102,9 +102,8 @@ namespace Nue.Models
 
                 if (frameworkIsAvailable)
                 {
-                    var binaries = Directory.GetFiles(closestDirectory,
-                        "*.dll",
-                        SearchOption.TopDirectoryOnly);
+                    var binaries = Directory.EnumerateFiles(closestDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                                    .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
                     var docFiles = Directory.GetFiles(closestDirectory,
                         "*.xml",
                         SearchOption.TopDirectoryOnly);
@@ -125,7 +124,8 @@ namespace Nue.Models
                             var availableDependencyMonikers = new List<string>();
 
                             var targetPath = Path.Combine(dependency, "lib");
-                            if (Directory.Exists(targetPath) && Directory.GetFiles(targetPath,"*.dll",SearchOption.AllDirectories).Count() > 0)
+                            if (Directory.Exists(targetPath) && Directory.EnumerateFiles(targetPath, "*.*", SearchOption.AllDirectories)
+                                    .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).Count() > 0)
                             {
                                 var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
                                 var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
@@ -154,9 +154,8 @@ namespace Nue.Models
                 {
                     // We could not find a closest folder, so let's just check in the root.
 
-                    var binaries = Directory.GetFiles(pacManPackageLibPath,
-                        "*.dll",
-                        SearchOption.TopDirectoryOnly);
+                    var binaries = Directory.EnumerateFiles(pacManPackageLibPath, "*.*", SearchOption.TopDirectoryOnly)
+                                    .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
                     var docFiles = Directory.GetFiles(pacManPackageLibPath,
                         "*.xml",
                         SearchOption.TopDirectoryOnly);
@@ -177,7 +176,8 @@ namespace Nue.Models
                             var availableDependencyMonikers = new List<string>();
 
                             var targetPath = Path.Combine(dependency, "lib");
-                            if (Directory.Exists(targetPath) && Directory.GetFiles(targetPath, "*.dll", SearchOption.AllDirectories).Count() > 0)
+                            if (Directory.Exists(targetPath) && Directory.EnumerateFiles(targetPath, "*.*", SearchOption.AllDirectories)
+                                    .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).Count() > 0)
                             {
                                 var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
                                 var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
@@ -189,8 +189,8 @@ namespace Nue.Models
                                     Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
                                         package.Moniker));
 
-                                    var dependencyBinaries = Directory.GetFiles(closestDepLibFolder, "*.dll",
-                                        SearchOption.TopDirectoryOnly);
+                                    var dependencyBinaries = Directory.EnumerateFiles(closestDepLibFolder, "*.*", SearchOption.TopDirectoryOnly)
+                                    .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
 
                                     foreach (var binary in dependencyBinaries)
                                         File.Copy(binary,
