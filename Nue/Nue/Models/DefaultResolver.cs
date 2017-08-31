@@ -127,11 +127,32 @@ namespace Nue.Models
                             if (Directory.Exists(targetPath) && Directory.EnumerateFiles(targetPath, "*.*", SearchOption.AllDirectories)
                                     .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).Count() > 0)
                             {
+                                List<string> alternateDependencies = new List<string>();
+                                // In some cases, we might want to have alterhative dependency monikers.
+                                if (package.CustomPropertyBag.ContainsKey("altDep"))
+                                {
+                                    alternateDependencies = new List<string>(package.CustomPropertyBag["altDep"].Split('|'));
+                                }
+                                
                                 var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
                                 var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
 
-                                var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
+                                if (string.IsNullOrWhiteSpace(closestDepLibFolder))
+                                {
+                                    // We could not find a regular TFM dependency, let's try again for alternates.
+                                    if (alternateDependencies.Count > 0)
+                                    {
+                                        foreach(var altDependency in alternateDependencies)
+                                        {
+                                            closestDepLibFolder = Helpers.GetBestLibMatch(altDependency, dependencyLibFolders);
+                                            if (!string.IsNullOrWhiteSpace(closestDepLibFolder))
+                                                break;
+                                        }
+                                    }
+                                }
 
+                                var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
+                                
                                 if (dFrameworkIsAvailable)
                                 {
                                     Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
@@ -179,8 +200,29 @@ namespace Nue.Models
                             if (Directory.Exists(targetPath) && Directory.EnumerateFiles(targetPath, "*.*", SearchOption.AllDirectories)
                                     .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).Count() > 0)
                             {
+                                List<string> alternateDependencies = new List<string>();
+                                // In some cases, we might want to have alterhative dependency monikers.
+                                if (package.CustomPropertyBag.ContainsKey("altDep"))
+                                {
+                                    alternateDependencies = new List<string>(package.CustomPropertyBag["altDep"].Split('|'));
+                                }
+
                                 var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
                                 var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
+
+                                if (string.IsNullOrWhiteSpace(closestDepLibFolder))
+                                {
+                                    // We could not find a regular TFM dependency, let's try again for alternates.
+                                    if (alternateDependencies.Count > 0)
+                                    {
+                                        foreach (var altDependency in alternateDependencies)
+                                        {
+                                            closestDepLibFolder = Helpers.GetBestLibMatch(altDependency, dependencyLibFolders);
+                                            if (!string.IsNullOrWhiteSpace(closestDepLibFolder))
+                                                break;
+                                        }
+                                    }
+                                }
 
                                 var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
 
