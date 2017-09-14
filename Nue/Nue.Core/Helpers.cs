@@ -44,7 +44,7 @@ namespace Nue.Core
 
             // Look for a folder that matches exactly the TFM.
             var exactMatch = (from c in folderPaths
-                              where Path.GetFileName(c).Equals(tfm, StringComparison.InvariantCultureIgnoreCase)
+                              where Path.GetFileName(c).Equals(tfm, StringComparison.CurrentCultureIgnoreCase)
                               select c).FirstOrDefault();
 
             // If we found one, we should just return it.

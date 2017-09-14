@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualBasic.FileIO;
-using Nue.Interfaces;
-using Nue.Models;
+using Nue.StandardResolver;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,6 +13,24 @@ namespace Nue.Core
 {
     public class Extractor
     {
+        public static void PreparePropertyBag(IEnumerable<PackageAtom> packages, string defaultTargetFramework)
+        {
+            foreach (var package in packages)
+            {
+
+                if (package.CustomPropertyBag ==null)
+                {
+                    package.CustomPropertyBag = new Dictionary<string, string>();
+                }
+
+                // Inject the TFM into the resolver if none was specified for the package.
+                if (!package.CustomPropertyBag.ContainsKey("tfm"))
+                {
+                    package.CustomPropertyBag.Add("tfm", defaultTargetFramework);
+                }
+            }
+        }
+
         public async static Task<bool> DownloadPackages(string packagePath, string outputPath, string targetFramework)
         {
             if (string.IsNullOrWhiteSpace(packagePath) || string.IsNullOrWhiteSpace(outputPath) ||
@@ -21,48 +38,36 @@ namespace Nue.Core
 
             var packages = GetPackagesFromFile(packagePath);
 
+            PreparePropertyBag(packages, targetFramework);
+
             foreach (var package in packages)
             {
                 // Package resolver that will be used to get the full path to binaries.
                 IPackageResolver resolver = null;
 
-                if (package.CustomPropertyBag != null)
+                // Check if we have a custom resolver.
+                if (package.CustomPropertyBag.ContainsKey("resolver"))
                 {
-                    // Check if we have a custom resolver.
-                    if (package.CustomPropertyBag.ContainsKey("resolver"))
+                    // Determine the right resolver.
+                    var expectedResolver = package.CustomPropertyBag["resolver"];
+                    switch(expectedResolver)
                     {
-                        // Determine the right resolver.
-                        var expectedResolver = package.CustomPropertyBag["resolver"];
-                        switch(expectedResolver)
-                        {
-                            case "xbl":
-                                {
-                                    // Xbox Live-style resolver.
-                                    resolver = new DefaultResolver();
-                                    break;
-                                }
-                            default:
-                                {
-                                    resolver = new DefaultResolver();
-                                    break;
-                                }
-                        }
-                    }
-                    else
-                    {
-                        resolver = new DefaultResolver();
+                        case "xbl":
+                            {
+                                // Xbox Live-style resolver.
+                                resolver = new Resolver();
+                                break;
+                            }
+                        default:
+                            {
+                                resolver = new Resolver();
+                                break;
+                            }
                     }
                 }
                 else
                 {
-                    package.CustomPropertyBag = new Dictionary<string, string>();
-                    resolver = new DefaultResolver();
-                }
-
-                // Inject the TFM into the resolver if none was specified for the package.
-                if (!package.CustomPropertyBag.ContainsKey("tfm"))
-                {
-                    package.CustomPropertyBag.Add("tfm", targetFramework);
+                    resolver = new Resolver();
                 }
 
                 var binaries = await resolver.CopyBinarySet(package,outputPath);
@@ -144,12 +149,17 @@ namespace Nue.Core
             return packages;
         }
 
+        public static IDictionary<string, string> Parameters { get; set; }
+
         public static bool ExtractLocalPackages(string outputPath, string packageList, string nuGetPath, string targetFramework, string packageSource)
         {
             var packages = GetPackagesFromFile(packageList);
+            PreparePropertyBag(packages, targetFramework);
 
             foreach (var package in packages)
             {
+                Parameters = new Dictionary<string, string>(package.CustomPropertyBag);
+
                 Directory.CreateDirectory(outputPath + "\\_pacman");
 
                 ConsoleEx.WriteLine($"Attempting to install: {package.GetFullName()}. Installing...",
@@ -175,23 +185,40 @@ namespace Nue.Core
                 var pacManPackageLibPath = pacManPackagePath + "\\lib";
                 var packageContainerPath = Path.Combine(outputPath, package.Moniker);
 
-                if (Directory.Exists(pacManPackageLibPath))
+                if (Directory.Exists(pacManPackageLibPath) && !Directory.Exists(packageContainerPath))
                 {
+                    // Directory exists, so we should proceed to package extraction.
+
                     var directories = Directory.GetDirectories(pacManPackageLibPath);
+                    var closestDirectory = Helpers.GetBestLibMatch(Parameters["tfm"], directories);
+
+                    var availableMonikers = new List<string>();
                     var dependencyFolders = from c in Directory.GetDirectories(outputPath + "\\_pacman")
                                             where Path.GetFileName(c).ToLower() != packageFqn.ToLower()
                                             select c;
 
-                    var closestFolder = Helpers.GetBestLibMatch(targetFramework, directories);
+                    Console.WriteLine("Currently available lib sets:");
+                    ConsoleEx.WriteLine("|__", ConsoleColor.Yellow);
+                    foreach (var folder in directories)
+                    {
+                        var tfmFolder = Path.GetFileName(folder);
+                        availableMonikers.Add(tfmFolder);
+                        ConsoleEx.WriteLine("   |___" + tfmFolder, ConsoleColor.Yellow);
+                    }
 
-                    var frameworkIsAvailable = !string.IsNullOrWhiteSpace(closestFolder);
+                    Console.WriteLine("Package dependencies:");
+                    ConsoleEx.WriteLine("|__", ConsoleColor.Yellow);
+                    foreach (var dependency in dependencyFolders)
+                        ConsoleEx.WriteLine("   |___" + Path.GetFileNameWithoutExtension(dependency),
+                            ConsoleColor.Yellow);
+
+                    var frameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDirectory);
 
                     if (frameworkIsAvailable)
                     {
-                        var binaries = Directory.GetFiles(closestFolder,
-                            "*.dll",
-                            SearchOption.TopDirectoryOnly);
-                        var docFiles = Directory.GetFiles(closestFolder,
+                        var binaries = Directory.EnumerateFiles(closestDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                                        .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
+                        var docFiles = Directory.GetFiles(closestDirectory,
                             "*.xml",
                             SearchOption.TopDirectoryOnly);
 
@@ -199,7 +226,6 @@ namespace Nue.Core
                         if (binaries.Any())
                         {
                             Directory.CreateDirectory(packageContainerPath);
-
 
                             foreach (var binary in binaries)
                                 File.Copy(binary, Path.Combine(packageContainerPath, Path.GetFileName(binary)), true);
@@ -211,15 +237,38 @@ namespace Nue.Core
                             {
                                 var availableDependencyMonikers = new List<string>();
 
-                                if (Directory.Exists(Path.Combine(dependency, "lib")))
+                                var targetPath = Path.Combine(dependency, "lib");
+                                if (Directory.Exists(targetPath) && Directory.EnumerateFiles(targetPath, "*.*", SearchOption.AllDirectories)
+                                        .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).Count() > 0)
                                 {
-                                    var depLibraries = Directory.GetDirectories(Path.Combine(dependency, "lib"));
-                                    var closestDepLibFolder = Helpers.GetBestLibMatch(targetFramework, depLibraries);
+                                    List<string> alternateDependencies = new List<string>();
+                                    // In some cases, we might want to have alterhative dependency monikers.
+                                    if (package.CustomPropertyBag.ContainsKey("altDep"))
+                                    {
+                                        alternateDependencies = new List<string>(package.CustomPropertyBag["altDep"].Split('|'));
+                                    }
+
+                                    var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
+                                    var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
+
+                                    if (string.IsNullOrWhiteSpace(closestDepLibFolder))
+                                    {
+                                        // We could not find a regular TFM dependency, let's try again for alternates.
+                                        if (alternateDependencies.Count > 0)
+                                        {
+                                            foreach (var altDependency in alternateDependencies)
+                                            {
+                                                closestDepLibFolder = Helpers.GetBestLibMatch(altDependency, dependencyLibFolders);
+                                                if (!string.IsNullOrWhiteSpace(closestDepLibFolder))
+                                                    break;
+                                            }
+                                        }
+                                    }
+
                                     var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
 
                                     if (dFrameworkIsAvailable)
                                     {
-
                                         Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
                                             package.Moniker));
 
@@ -232,18 +281,16 @@ namespace Nue.Core
                                                     Path.GetFileName(binary)), true);
 
                                     }
-
                                 }
                             }
                         }
-
                     }
                     else
                     {
                         // We could not find a closest folder, so let's just check in the root.
-                        var binaries = Directory.GetFiles(pacManPackageLibPath,
-                            "*.dll",
-                            SearchOption.TopDirectoryOnly);
+
+                        var binaries = Directory.EnumerateFiles(pacManPackageLibPath, "*.*", SearchOption.TopDirectoryOnly)
+                                        .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
                         var docFiles = Directory.GetFiles(pacManPackageLibPath,
                             "*.xml",
                             SearchOption.TopDirectoryOnly);
@@ -253,7 +300,6 @@ namespace Nue.Core
                         {
                             Directory.CreateDirectory(packageContainerPath);
 
-
                             foreach (var binary in binaries)
                                 File.Copy(binary, Path.Combine(packageContainerPath, Path.GetFileName(binary)), true);
 
@@ -264,20 +310,43 @@ namespace Nue.Core
                             {
                                 var availableDependencyMonikers = new List<string>();
 
-                                if (Directory.Exists(Path.Combine(dependency, "lib")))
+                                var targetPath = Path.Combine(dependency, "lib");
+                                if (Directory.Exists(targetPath) && Directory.EnumerateFiles(targetPath, "*.*", SearchOption.AllDirectories)
+                                        .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).Count() > 0)
                                 {
-                                    var depLibraries = Directory.GetDirectories(Path.Combine(dependency, "lib"));
-                                    var closestDepLibFolder = Helpers.GetBestLibMatch(targetFramework, depLibraries);
+                                    List<string> alternateDependencies = new List<string>();
+                                    // In some cases, we might want to have alterhative dependency monikers.
+                                    if (package.CustomPropertyBag.ContainsKey("altDep"))
+                                    {
+                                        alternateDependencies = new List<string>(package.CustomPropertyBag["altDep"].Split('|'));
+                                    }
+
+                                    var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
+                                    var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
+
+                                    if (string.IsNullOrWhiteSpace(closestDepLibFolder))
+                                    {
+                                        // We could not find a regular TFM dependency, let's try again for alternates.
+                                        if (alternateDependencies.Count > 0)
+                                        {
+                                            foreach (var altDependency in alternateDependencies)
+                                            {
+                                                closestDepLibFolder = Helpers.GetBestLibMatch(altDependency, dependencyLibFolders);
+                                                if (!string.IsNullOrWhiteSpace(closestDepLibFolder))
+                                                    break;
+                                            }
+                                        }
+                                    }
+
                                     var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
 
                                     if (dFrameworkIsAvailable)
                                     {
-
                                         Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
                                             package.Moniker));
 
-                                        var dependencyBinaries = Directory.GetFiles(closestDepLibFolder, "*.dll",
-                                            SearchOption.TopDirectoryOnly);
+                                        var dependencyBinaries = Directory.EnumerateFiles(closestDepLibFolder, "*.*", SearchOption.TopDirectoryOnly)
+                                        .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
 
                                         foreach (var binary in dependencyBinaries)
                                             File.Copy(binary,
@@ -285,13 +354,10 @@ namespace Nue.Core
                                                     Path.GetFileName(binary)), true);
 
                                     }
-
                                 }
                             }
                         }
-
                     }
-
                 }
 
                 try

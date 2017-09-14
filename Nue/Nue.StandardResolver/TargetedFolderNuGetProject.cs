@@ -1,12 +1,7 @@
 ﻿using NuGet.Frameworks;
 using NuGet.ProjectManagement;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Nue.Models
+namespace Nue.StandardResolver
 {
     public class TargetedFolderNuGetProject : FolderNuGetProject
     {

@@ -1,5 +1,4 @@
 ﻿using Nue.Core;
-using Nue.Interfaces;
 using NuGet.Configuration;
 using NuGet.PackageManagement;
 using NuGet.Packaging.Core;
@@ -16,9 +15,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Nue.Models
+namespace Nue.StandardResolver
 {
-    public class DefaultResolver : IPackageResolver
+    public class Resolver : IPackageResolver
     {
         public IDictionary<string, string> Parameters { get; set; }
 
@@ -133,7 +132,7 @@ namespace Nue.Models
                                 {
                                     alternateDependencies = new List<string>(package.CustomPropertyBag["altDep"].Split('|'));
                                 }
-                                
+
                                 var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
                                 var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
 
@@ -142,7 +141,7 @@ namespace Nue.Models
                                     // We could not find a regular TFM dependency, let's try again for alternates.
                                     if (alternateDependencies.Count > 0)
                                     {
-                                        foreach(var altDependency in alternateDependencies)
+                                        foreach (var altDependency in alternateDependencies)
                                         {
                                             closestDepLibFolder = Helpers.GetBestLibMatch(altDependency, dependencyLibFolders);
                                             if (!string.IsNullOrWhiteSpace(closestDepLibFolder))
@@ -152,7 +151,7 @@ namespace Nue.Models
                                 }
 
                                 var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
-                                
+
                                 if (dFrameworkIsAvailable)
                                 {
                                     Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",

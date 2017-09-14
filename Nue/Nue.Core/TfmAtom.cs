@@ -1,4 +1,4 @@
-﻿namespace Nue.Models
+﻿namespace Nue.Core
 {
     public class TfmAtom
     {

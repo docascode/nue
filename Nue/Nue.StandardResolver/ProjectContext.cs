@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Nue.Models
+namespace Nue.StandardResolver
 {
     public class ProjectContext : INuGetProjectContext
     {

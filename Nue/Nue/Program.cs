@@ -33,7 +33,8 @@ namespace Nue
                 else if (options.Mode == "le")
                 {
                     // PackagePath = Path to package list
-                    Extractor.ExtractLocalPackages(options.OutputPath, options.PackagePath, options.NuGetPath, options.Framework, options.PackageSource);
+                    var completed = Extractor.ExtractLocalPackages(options.OutputPath, options.PackagePath, options.NuGetPath, options.Framework, options.PackageSource);
+                    Console.Write("Completed successfully: " + completed);
                 }
             });
 

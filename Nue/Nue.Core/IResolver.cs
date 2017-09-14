@@ -1,6 +1,6 @@
 ﻿namespace Nue.Core
 {
-    internal interface IResolver
+    public interface IResolver
     {
     }
 }

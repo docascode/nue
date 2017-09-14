@@ -1,10 +1,9 @@
-﻿using Nue.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Nue.Interfaces
+namespace Nue.Core
 {
-    interface IPackageResolver
+    public interface IPackageResolver
     {
         IDictionary<string, string> Parameters { get; set; }
 

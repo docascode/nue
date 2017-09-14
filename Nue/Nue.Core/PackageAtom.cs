@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Nue.Models
+namespace Nue.Core
 {
     public class PackageAtom
     {

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard1.4</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NuGet.Common" Version="4.3.0" />
+    <PackageReference Include="NuGet.Configuration" Version="4.3.0" />
+  </ItemGroup>
+
+</Project>
