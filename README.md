@@ -1,8 +1,8 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/xk6smvvpr3wk9pru?svg=true)](https://ci.appveyor.com/project/dend/nue)
 
-# nue
+# 📦 nue - the NuGet Package Extractor
 
-Tool to sort assemblies shipped in NuGet packages into their correct moniker folders.
+Tool to extract assemblies shipped in NuGet packages into their correct moniker folders. The primary use for this tool is generating managed reference documentation on [docs.microsoft.com](https://docs.microsoft.com).
 
 ## To Run
 
