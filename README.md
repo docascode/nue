@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/xk6smvvpr3wk9pru?svg=true)](https://ci.appveyor.com/project/dend/nue)
+[![Build status](https://apidrop.visualstudio.com/_apis/public/build/definitions/97663bb1-33b9-48bf-ab0d-6ab65814469c/68/badge)
 
 # 📦 nue - the NuGet Package Extractor
 
