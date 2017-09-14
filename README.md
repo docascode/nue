@@ -4,6 +4,8 @@
 
 Tool to extract assemblies shipped in NuGet packages into their correct moniker folders. The primary use for this tool is generating managed reference documentation on [docs.microsoft.com](https://docs.microsoft.com).
 
+![Folder Breakdown](nue.png)
+
 ## To Run
 
 `nue.exe`
@@ -27,6 +29,7 @@ When working with a list of packages, generally you need to follow the structure
 {package_moniker},{package_ID},{version_1},{version_2},...,{version_N}
 {package_moniker},{package_ID},{version_1},{version_2},...,{version_N}
 ```
+New packages should be on a new line.
 
 ### Custom Conventions
 
@@ -35,7 +38,3 @@ In some cases, you might need to create custom package onboarding scenarios - as
 ```
 {package_moniker},[tfm=alternate_tfm]{package_ID},{version_1},{version_2},...,{version_N}
 ```
-
-New packages should be on a new line.
-
-![Folder Breakdown](nue.png)
