@@ -28,6 +28,14 @@ When working with a list of packages, generally you need to follow the structure
 {package_moniker},{package_ID},{version_1},{version_2},...,{version_N}
 ```
 
+### Custom Conventions
+
+In some cases, you might need to create custom package onboarding scenarios - as an example, `nue` by default picks up all packages with one single TFM. To override the TFM on a per-package basis, it is possible to use the `[]` prefix, as such:
+
+```
+{package_moniker},[tfm=alternate_tfm]{package_ID},{version_1},{version_2},...,{version_N}
+```
+
 New packages should be on a new line.
 
 ![Folder Breakdown](nue.png)
