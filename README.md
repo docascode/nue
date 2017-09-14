@@ -1,4 +1,4 @@
-[![Build status](https://apidrop.visualstudio.com/_apis/public/build/definitions/97663bb1-33b9-48bf-ab0d-6ab65814469c/68/badge)
+![Build status](https://apidrop.visualstudio.com/_apis/public/build/definitions/97663bb1-33b9-48bf-ab0d-6ab65814469c/68/badge)
 
 # 📦 nue - the NuGet Package Extractor
 
