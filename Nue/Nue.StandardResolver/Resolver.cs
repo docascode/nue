@@ -1,4 +1,5 @@
-﻿using Nue.Core;
+﻿using Ionic.Zip;
+using Nue.Core;
 using NuGet.Configuration;
 using NuGet.PackageManagement;
 using NuGet.Packaging.Core;
@@ -14,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Nue.StandardResolver
 {
@@ -72,8 +74,8 @@ namespace Nue.StandardResolver
             // another team.
             if (Directory.Exists(pacManPackageLibPath) && !Directory.Exists(packageContainerPath))
             {
-                // Directory exists, so we should proceed to package extraction.
 
+                // Directory exists, so we should proceed to package extraction.
                 var directories = Directory.GetDirectories(pacManPackageLibPath);
                 var closestDirectory = Helpers.GetBestLibMatch(Parameters["tfm"], directories);
 
@@ -99,152 +101,97 @@ namespace Nue.StandardResolver
 
                 var frameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDirectory);
 
+
+                // We could not find a closest folder, so let's just check in the root.
+
+                var binaries = Directory.EnumerateFiles(pacManPackageLibPath, "*.*", SearchOption.TopDirectoryOnly)
+                                .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
+                var docFiles = Directory.GetFiles(pacManPackageLibPath,
+                    "*.xml",
+                    SearchOption.TopDirectoryOnly);
+
+                Directory.CreateDirectory(packageContainerPath);
+
+                // Make sure to only go through any processing if we found binaries.
+                if (binaries.Any())
+                {
+                    foreach (var binary in binaries)
+                        File.Copy(binary, Path.Combine(packageContainerPath, Path.GetFileName(binary)), true);
+
+                    foreach (var docFile in docFiles)
+                        File.Copy(docFile, Path.Combine(packageContainerPath, Path.GetFileName(docFile)), true);
+                }
+
                 if (frameworkIsAvailable)
                 {
-                    var binaries = Directory.EnumerateFiles(closestDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                    binaries = Directory.EnumerateFiles(closestDirectory, "*.*", SearchOption.TopDirectoryOnly)
                                     .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
-                    var docFiles = Directory.GetFiles(closestDirectory,
+                    docFiles = Directory.GetFiles(closestDirectory,
                         "*.xml",
                         SearchOption.TopDirectoryOnly);
 
                     // Make sure to only go through any processing if we found binaries.
                     if (binaries.Any())
                     {
-                        Directory.CreateDirectory(packageContainerPath);
-
                         foreach (var binary in binaries)
                             File.Copy(binary, Path.Combine(packageContainerPath, Path.GetFileName(binary)), true);
 
                         foreach (var docFile in docFiles)
                             File.Copy(docFile, Path.Combine(packageContainerPath, Path.GetFileName(docFile)), true);
+                    }
+                }
 
-                        foreach (var dependency in dependencyFolders)
+                foreach (var dependency in dependencyFolders)
+                {
+                    var availableDependencyMonikers = new List<string>();
+
+                    var targetPath = Path.Combine(dependency, "lib");
+                    if (Directory.Exists(targetPath) && Directory.EnumerateFiles(targetPath, "*.*", SearchOption.AllDirectories)
+                            .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).Count() > 0)
+                    {
+                        List<string> alternateDependencies = new List<string>();
+                        // In some cases, we might want to have alterhative dependency monikers.
+                        if (package.CustomPropertyBag.ContainsKey("altDep"))
                         {
-                            var availableDependencyMonikers = new List<string>();
+                            alternateDependencies = new List<string>(package.CustomPropertyBag["altDep"].Split('|'));
+                        }
 
-                            var targetPath = Path.Combine(dependency, "lib");
-                            if (Directory.Exists(targetPath) && Directory.EnumerateFiles(targetPath, "*.*", SearchOption.AllDirectories)
-                                    .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).Count() > 0)
+                        var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
+                        var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
+
+                        if (string.IsNullOrWhiteSpace(closestDepLibFolder))
+                        {
+                            // We could not find a regular TFM dependency, let's try again for alternates.
+                            if (alternateDependencies.Count > 0)
                             {
-                                List<string> alternateDependencies = new List<string>();
-                                // In some cases, we might want to have alterhative dependency monikers.
-                                if (package.CustomPropertyBag.ContainsKey("altDep"))
+                                foreach (var altDependency in alternateDependencies)
                                 {
-                                    alternateDependencies = new List<string>(package.CustomPropertyBag["altDep"].Split('|'));
-                                }
-
-                                var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
-                                var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
-
-                                if (string.IsNullOrWhiteSpace(closestDepLibFolder))
-                                {
-                                    // We could not find a regular TFM dependency, let's try again for alternates.
-                                    if (alternateDependencies.Count > 0)
-                                    {
-                                        foreach (var altDependency in alternateDependencies)
-                                        {
-                                            closestDepLibFolder = Helpers.GetBestLibMatch(altDependency, dependencyLibFolders);
-                                            if (!string.IsNullOrWhiteSpace(closestDepLibFolder))
-                                                break;
-                                        }
-                                    }
-                                }
-
-                                var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
-
-                                if (dFrameworkIsAvailable)
-                                {
-                                    Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
-                                        package.Moniker));
-
-                                    var dependencyBinaries = Directory.GetFiles(closestDepLibFolder, "*.dll",
-                                        SearchOption.TopDirectoryOnly);
-
-                                    foreach (var binary in dependencyBinaries)
-                                        File.Copy(binary,
-                                            Path.Combine(outputPath, "dependencies", package.Moniker,
-                                                Path.GetFileName(binary)), true);
-
+                                    closestDepLibFolder = Helpers.GetBestLibMatch(altDependency, dependencyLibFolders);
+                                    if (!string.IsNullOrWhiteSpace(closestDepLibFolder))
+                                        break;
                                 }
                             }
                         }
-                    }
-                }
-                else
-                {
-                    // We could not find a closest folder, so let's just check in the root.
 
-                    var binaries = Directory.EnumerateFiles(pacManPackageLibPath, "*.*", SearchOption.TopDirectoryOnly)
-                                    .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
-                    var docFiles = Directory.GetFiles(pacManPackageLibPath,
-                        "*.xml",
-                        SearchOption.TopDirectoryOnly);
+                        var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
 
-                    // Make sure to only go through any processing if we found binaries.
-                    if (binaries.Any())
-                    {
-                        Directory.CreateDirectory(packageContainerPath);
-
-                        foreach (var binary in binaries)
-                            File.Copy(binary, Path.Combine(packageContainerPath, Path.GetFileName(binary)), true);
-
-                        foreach (var docFile in docFiles)
-                            File.Copy(docFile, Path.Combine(packageContainerPath, Path.GetFileName(docFile)), true);
-
-                        foreach (var dependency in dependencyFolders)
+                        if (dFrameworkIsAvailable)
                         {
-                            var availableDependencyMonikers = new List<string>();
+                            Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
+                                package.Moniker));
 
-                            var targetPath = Path.Combine(dependency, "lib");
-                            if (Directory.Exists(targetPath) && Directory.EnumerateFiles(targetPath, "*.*", SearchOption.AllDirectories)
-                                    .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).Count() > 0)
-                            {
-                                List<string> alternateDependencies = new List<string>();
-                                // In some cases, we might want to have alterhative dependency monikers.
-                                if (package.CustomPropertyBag.ContainsKey("altDep"))
-                                {
-                                    alternateDependencies = new List<string>(package.CustomPropertyBag["altDep"].Split('|'));
-                                }
+                            var dependencyBinaries = Directory.EnumerateFiles(closestDepLibFolder, "*.*", SearchOption.TopDirectoryOnly)
+                            .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
 
-                                var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
-                                var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
+                            foreach (var binary in dependencyBinaries)
+                                File.Copy(binary,
+                                    Path.Combine(outputPath, "dependencies", package.Moniker,
+                                        Path.GetFileName(binary)), true);
 
-                                if (string.IsNullOrWhiteSpace(closestDepLibFolder))
-                                {
-                                    // We could not find a regular TFM dependency, let's try again for alternates.
-                                    if (alternateDependencies.Count > 0)
-                                    {
-                                        foreach (var altDependency in alternateDependencies)
-                                        {
-                                            closestDepLibFolder = Helpers.GetBestLibMatch(altDependency, dependencyLibFolders);
-                                            if (!string.IsNullOrWhiteSpace(closestDepLibFolder))
-                                                break;
-                                        }
-                                    }
-                                }
-
-                                var dFrameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDepLibFolder);
-
-                                if (dFrameworkIsAvailable)
-                                {
-                                    Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
-                                        package.Moniker));
-
-                                    var dependencyBinaries = Directory.EnumerateFiles(closestDepLibFolder, "*.*", SearchOption.TopDirectoryOnly)
-                                    .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
-
-                                    foreach (var binary in dependencyBinaries)
-                                        File.Copy(binary,
-                                            Path.Combine(outputPath, "dependencies", package.Moniker,
-                                                Path.GetFileName(binary)), true);
-
-                                }
-                            }
                         }
                     }
                 }
             }
-
             return true;
         }
     }
