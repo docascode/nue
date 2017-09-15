@@ -1,8 +1,10 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/xk6smvvpr3wk9pru?svg=true)](https://ci.appveyor.com/project/dend/nue)
+![Build status](https://apidrop.visualstudio.com/_apis/public/build/definitions/97663bb1-33b9-48bf-ab0d-6ab65814469c/68/badge)
 
 # 📦 nue - the NuGet Package Extractor
 
 Tool to extract assemblies shipped in NuGet packages into their correct moniker folders. The primary use for this tool is generating managed reference documentation on [docs.microsoft.com](https://docs.microsoft.com).
+
+![Folder Breakdown](nue.png)
 
 ## To Run
 
@@ -27,7 +29,12 @@ When working with a list of packages, generally you need to follow the structure
 {package_moniker},{package_ID},{version_1},{version_2},...,{version_N}
 {package_moniker},{package_ID},{version_1},{version_2},...,{version_N}
 ```
-
 New packages should be on a new line.
 
-![Folder Breakdown](nue.png)
+### Custom Conventions
+
+In some cases, you might need to create custom package onboarding scenarios - as an example, `nue` by default picks up all packages with one single TFM. To override the TFM on a per-package basis, it is possible to use the `[]` prefix, as such:
+
+```
+{package_moniker},[tfm=alternate_tfm]{package_ID},{version_1},{version_2},...,{version_N}
+```
