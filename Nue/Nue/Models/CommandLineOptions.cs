@@ -22,7 +22,7 @@ namespace Nue.Models
         [Option('n', "nugetpath", Required = false, HelpText = "Path to NuGet.exe (just the folder).")]
         public string NuGetPath { get; set; }
 
-        [Option('s', "packagesource", Required = false, HelpText = "Folder for local packages, if le mode is used.")]
+        [Option('s', "source", Required = false, HelpText = "Folder for local packages, if le mode is used.")]
         public string PackageSource { get; set; }
     }
 }
