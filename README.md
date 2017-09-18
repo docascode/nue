@@ -16,6 +16,7 @@ Tool to extract assemblies shipped in NuGet packages into their correct moniker 
 * `-a` or `--account` - Account for which to list the packages. Account name should match that listed on [NuGet.org](https://nuget.org).
 * `-f` or `--frameworks` - Framework for which to extract the packages. Use the [TFMs](https://docs.microsoft.com/en-us/nuget/schema/target-frameworks) reference to target folders in the `lib` folder of the main package.
 * `-n` or `--nugetpath` - Path to `nuget.exe` when working in `le` (local extraction) mode. This can be downloaded on the [official NuGet page](https://www.nuget.org/downloads).
+* `-s` or `--source` - Path to folder that cotnains local NuGet packages, when running this tool in `le` mode.
 
 ## Content
 
