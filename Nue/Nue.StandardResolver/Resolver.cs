@@ -1,5 +1,4 @@
-﻿using Ionic.Zip;
-using Nue.Core;
+﻿using Nue.Core;
 using NuGet.Configuration;
 using NuGet.PackageManagement;
 using NuGet.Packaging.Core;
@@ -12,10 +11,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Nue.StandardResolver
 {

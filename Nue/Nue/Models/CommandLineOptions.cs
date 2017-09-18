@@ -1,10 +1,4 @@
 ﻿using CommandLine;
-using CommandLine.Text;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nue.Models
 {
@@ -28,7 +22,7 @@ namespace Nue.Models
         [Option('n', "nugetpath", Required = false, HelpText = "Path to NuGet.exe (just the folder).")]
         public string NuGetPath { get; set; }
 
-        [Option('s', "packagesource", Required = false, HelpText = "Path to NuGet.exe (just the folder).")]
+        [Option('s', "packagesource", Required = false, HelpText = "Folder for local packages, if le mode is used.")]
         public string PackageSource { get; set; }
     }
 }
