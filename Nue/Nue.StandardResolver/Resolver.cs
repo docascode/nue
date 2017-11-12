@@ -22,6 +22,14 @@ namespace Nue.StandardResolver
 
         public async Task<bool> CopyBinarySet(PackageAtom package, string outputPath)
         {
+            string defaultPackageSource = "https://api.nuget.org/v3/index.json";
+
+            // Check if we have a requirement for a custom package source
+            if (package.CustomPropertyBag.ContainsKey("customSource"))
+            {
+                defaultPackageSource =package.CustomPropertyBag["customSource"];
+            }
+
             Parameters = new Dictionary<string, string>(package.CustomPropertyBag);
 
             var providers = new List<Lazy<INuGetResourceProvider>>();
@@ -31,7 +39,7 @@ namespace Nue.StandardResolver
             var settings = Settings.LoadDefaultSettings(rootPath, null, new MachineWideSettings());
             ISourceRepositoryProvider sourceRepositoryProvider = new SourceRepositoryProvider(settings, providers);
 
-            var packageSource = new PackageSource("https://api.nuget.org/v3/index.json");
+            var packageSource = new PackageSource(defaultPackageSource);
 
             NuGetProject project = new TargetedFolderNuGetProject(rootPath, Parameters["tfm"]);
 
