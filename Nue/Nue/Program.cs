@@ -37,8 +37,6 @@ namespace Nue
                     Console.Write("Completed successfully: " + completed);
                 }
             });
-
-            Console.Read();
         }
     }
 }
