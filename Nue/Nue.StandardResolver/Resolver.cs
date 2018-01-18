@@ -84,7 +84,6 @@ namespace Nue.StandardResolver
                 pacManPackageLibPath = pacManPackagePath + "\\lib";
             }
 
-            Convert.ToBoolean(package.CustomPropertyBag["metapackage"]);
             var packageContainerPath = Path.Combine(outputPath, package.Moniker);
 
 
