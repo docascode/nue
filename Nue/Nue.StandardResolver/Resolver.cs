@@ -72,14 +72,26 @@ namespace Nue.StandardResolver
 
             var packageFqn = package.Name + "." + package.Version;
             var pacManPackagePath = outputPath + "\\_pacman\\" + packageFqn;
-            var pacManPackageLibPath = pacManPackagePath + "\\lib";
+            string pacManPackageLibPath = "";
+
+            // In some cases, the lookup might be happening inside a custom path.
+            if (!string.IsNullOrWhiteSpace(package.CustomPropertyBag["libpath"]))
+            {
+                pacManPackageLibPath = pacManPackagePath + Convert.ToString(package.CustomPropertyBag["libpath"]);
+            }
+            else
+            {
+                pacManPackageLibPath = pacManPackagePath + "\\lib";
+            }
+
+            Convert.ToBoolean(package.CustomPropertyBag["metapackage"]);
             var packageContainerPath = Path.Combine(outputPath, package.Moniker);
+
 
             // Among other things, we need to make sure that the package was not already extracted for 
             // another team.
             if (Directory.Exists(pacManPackageLibPath) && !Directory.Exists(packageContainerPath))
             {
-
                 // Directory exists, so we should proceed to package extraction.
                 var directories = Directory.GetDirectories(pacManPackageLibPath);
                 var closestDirectory = Helpers.GetBestLibMatch(Parameters["tfm"], directories);
