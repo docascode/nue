@@ -75,7 +75,7 @@ namespace Nue.StandardResolver
             string pacManPackageLibPath = "";
 
             // In some cases, the lookup might be happening inside a custom path.
-            if (!string.IsNullOrWhiteSpace(package.CustomPropertyBag["libpath"]))
+            if (package.CustomPropertyBag.ContainsKey("libpath") && !string.IsNullOrWhiteSpace(package.CustomPropertyBag["libpath"]))
             {
                 pacManPackageLibPath = pacManPackagePath + Convert.ToString(package.CustomPropertyBag["libpath"]);
             }
