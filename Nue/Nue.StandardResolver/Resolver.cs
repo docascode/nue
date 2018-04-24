@@ -20,7 +20,7 @@ namespace Nue.StandardResolver
     {
         public IDictionary<string, string> Parameters { get; set; }
 
-        public async Task<bool> CopyBinarySet(PackageAtom package, string outputPath)
+        public async Task<bool> CopyBinarySet(PackageAtom package, string outputPath, KeyValuePair<string, string> credentials = new KeyValuePair<string, string>())
         {
             string defaultPackageSource = "https://api.nuget.org/v3/index.json";
 
@@ -40,6 +40,10 @@ namespace Nue.StandardResolver
             ISourceRepositoryProvider sourceRepositoryProvider = new SourceRepositoryProvider(settings, providers);
 
             var packageSource = new PackageSource(defaultPackageSource);
+            if (!string.IsNullOrWhiteSpace(credentials.Key) && !string.IsNullOrWhiteSpace(credentials.Value))
+            {
+                packageSource.Credentials = new PackageSourceCredential(string.Empty, credentials.Key, credentials.Value, true);
+            }
 
             NuGetProject project = new TargetedFolderNuGetProject(rootPath, Parameters["tfm"]);
 

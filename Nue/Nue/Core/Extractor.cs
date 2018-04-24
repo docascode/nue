@@ -31,7 +31,7 @@ namespace Nue.Core
             }
         }
 
-        public async static Task<bool> DownloadPackages(string packagePath, string outputPath, string targetFramework)
+        public async static Task<bool> DownloadPackages(string packagePath, string outputPath, string targetFramework, KeyValuePair<string,string> credentials = new KeyValuePair<string,string>())
         {
             if (string.IsNullOrWhiteSpace(packagePath) || string.IsNullOrWhiteSpace(outputPath) ||
                 string.IsNullOrWhiteSpace(targetFramework)) return false;
@@ -70,7 +70,7 @@ namespace Nue.Core
                     resolver = new Resolver();
                 }
 
-                var binaries = await resolver.CopyBinarySet(package,outputPath);
+                var binaries = await resolver.CopyBinarySet(package, outputPath, credentials);
 
                 try
                 {

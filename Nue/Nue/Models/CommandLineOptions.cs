@@ -24,5 +24,11 @@ namespace Nue.Models
 
         [Option('s', "source", Required = false, HelpText = "Folder for local packages, if le mode is used.")]
         public string PackageSource { get; set; }
+
+        [Option('P', "password", Required = false, HelpText = "Password for the feed to be used.")]
+        public string Password { get; set; }
+
+        [Option('U', "username", Required = false, HelpText = "Username for the feed to be used.")]
+        public string Username { get; set; }
     }
 }

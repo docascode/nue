@@ -21,7 +21,7 @@ namespace Nue
 
                     Task.Run(async () =>
                     {
-                        var completed = await Extractor.DownloadPackages(options.PackagePath, options.OutputPath, options.Framework);
+                        var completed = await Extractor.DownloadPackages(options.PackagePath, options.OutputPath, options.Framework, new System.Collections.Generic.KeyValuePair<string, string>(options.Username,options.Password));
 
                         Console.Write("Completed successfully: " + completed);
                     }).Wait();

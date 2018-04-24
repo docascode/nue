@@ -7,6 +7,6 @@ namespace Nue.Core
     {
         IDictionary<string, string> Parameters { get; set; }
 
-        Task<bool> CopyBinarySet(PackageAtom package, string outputPath);
+        Task<bool> CopyBinarySet(PackageAtom package, string outputPath, KeyValuePair<string, string> credentials = new KeyValuePair<string, string>());
     }
 }
