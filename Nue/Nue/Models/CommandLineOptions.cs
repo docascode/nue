@@ -2,7 +2,7 @@
 
 namespace Nue.Models
 {
-    class CommandLineOptions
+    internal class CommandLineOptions
     {
         [Option('m', "mode", Required = true, HelpText = "Nue mode of operation. Can be: extract, listpac.")]
         public string Mode { get; set; }
@@ -25,10 +25,10 @@ namespace Nue.Models
         [Option('s', "source", Required = false, HelpText = "Folder for local packages, if le mode is used.")]
         public string PackageSource { get; set; }
 
-        [Option('P', "password", Required = false, HelpText = "Password for the feed to be used.")]
+        [Option('P', "password", Required = false, HelpText = "Password for the feed to be used.", Default = "")]
         public string Password { get; set; }
 
-        [Option('U', "username", Required = false, HelpText = "Username for the feed to be used.")]
+        [Option('U', "username", Required = false, HelpText = "Username for the feed to be used.", Default = "")]
         public string Username { get; set; }
     }
 }

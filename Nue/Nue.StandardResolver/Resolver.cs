@@ -40,7 +40,7 @@ namespace Nue.StandardResolver
             ISourceRepositoryProvider sourceRepositoryProvider = new SourceRepositoryProvider(settings, providers);
 
             var packageSource = new PackageSource(defaultPackageSource);
-            if (!string.IsNullOrWhiteSpace(credentials.Key) && !string.IsNullOrWhiteSpace(credentials.Value))
+            if (!string.IsNullOrWhiteSpace(credentials.Key) || !string.IsNullOrWhiteSpace(credentials.Value))
             {
                 packageSource.Credentials = new PackageSourceCredential(string.Empty, credentials.Key, credentials.Value, true);
             }
