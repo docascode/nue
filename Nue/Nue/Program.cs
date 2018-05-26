@@ -15,21 +15,22 @@ namespace Nue
         {
             Parser.Default.ParseArguments<CommandLineOptions>(args).WithParsed(options =>
             {
+                // Extracts the content from existing online NuGet packages.
                 if (options.Mode == "extract")
                 {
-                    var frameworks = options.Framework.Split(',');
-
                     Task.Run(async () =>
                     {
-                        var completed = await Extractor.DownloadPackages(options.PackagePath, options.OutputPath, options.Framework, new System.Collections.Generic.KeyValuePair<string, string>(options.Username,options.Password));
+                        var completed = await Extractor.DownloadPackages(options.PackagePath, options.OutputPath, options.Framework, new System.Collections.Generic.KeyValuePair<string, string>(options.Username,options.Password), options.Feed);
 
                         Console.Write("Completed successfully: " + completed);
                     }).Wait();
                 }
+                // Generate a list of packages.
                 else if (options.Mode == "listpac")
                 {
                     Lister.CreatePackageListing(options.Account, options.OutputPath, 3, NewNugetSearchUrl);
                 }
+                // Local extraction of NuGet packages from the disk.
                 else if (options.Mode == "le")
                 {
                     // PackagePath = Path to package list

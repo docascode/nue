@@ -4,7 +4,7 @@ namespace Nue.Models
 {
     internal class CommandLineOptions
     {
-        [Option('m', "mode", Required = true, HelpText = "Nue mode of operation. Can be: extract, listpac.")]
+        [Option('m', "mode", Required = true, HelpText = "Nue mode of operation. Can be: extract, listpac, le.")]
         public string Mode { get; set; }
 
         [Option('p', "packages", Required = false, HelpText = "Path to package list CSV.")]
@@ -13,7 +13,7 @@ namespace Nue.Models
         [Option('o', "output", Required = false, HelpText = "Determines where to output the files.")]
         public string OutputPath { get; set; }
 
-        [Option('f', "framework", Required = false, HelpText = "In extractor mode, determines the framework for which to get the binaries.")]
+        [Option('f', "framework", Required = false, HelpText = "In extractor mode, determines the framework for which to get the binaries.", Default = "")]
         public string Framework { get; set; }
 
         [Option('a', "account", Required = false, HelpText = "Account from which to pull packages.")]
@@ -30,5 +30,8 @@ namespace Nue.Models
 
         [Option('U', "username", Required = false, HelpText = "Username for the feed to be used.", Default = "")]
         public string Username { get; set; }
+
+        [Option('F', "feed", Required = false, HelpText = "Custom feed to use with to download NuGet packages.", Default = "")]
+        public string Feed { get; set; }
     }
 }

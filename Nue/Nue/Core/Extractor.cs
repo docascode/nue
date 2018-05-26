@@ -28,13 +28,25 @@ namespace Nue.Core
                 {
                     package.CustomPropertyBag.Add("tfm", defaultTargetFramework);
                 }
+
+                // Check if we have a metapackage flag
+                if (package.CustomPropertyBag.ContainsKey("metapackage"))
+                {
+                    package.IsMetaPackage = Convert.ToBoolean(package.CustomPropertyBag["metapackage"]);
+                }
+
+                // Determines whether a package is a PowerShell package - there is some custom logic that we need
+                // to apply to determine what the assemblies are there.
+                if (package.CustomPropertyBag.ContainsKey("ps"))
+                {
+                    package.IsPowerShellPackage = Convert.ToBoolean(package.CustomPropertyBag["ps"]);
+                }
             }
         }
 
-        public async static Task<bool> DownloadPackages(string packagePath, string outputPath, string targetFramework, KeyValuePair<string,string> credentials = new KeyValuePair<string,string>())
+        public async static Task<bool> DownloadPackages(string packagePath, string outputPath, string targetFramework, KeyValuePair<string,string> credentials = new KeyValuePair<string,string>(), string feed = "")
         {
-            if (string.IsNullOrWhiteSpace(packagePath) || string.IsNullOrWhiteSpace(outputPath) ||
-                string.IsNullOrWhiteSpace(targetFramework)) return false;
+            if (string.IsNullOrWhiteSpace(packagePath) || string.IsNullOrWhiteSpace(outputPath)) return false;
 
             var packages = GetPackagesFromFile(packagePath);
 
@@ -70,7 +82,7 @@ namespace Nue.Core
                     resolver = new Resolver();
                 }
 
-                var binaries = await resolver.CopyBinarySet(package, outputPath, credentials);
+                var binaries = await resolver.CopyBinarySet(package, outputPath, credentials, feed);
 
                 try
                 {
