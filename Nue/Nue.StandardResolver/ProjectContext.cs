@@ -1,18 +1,12 @@
 ﻿using NuGet.Packaging;
 using NuGet.ProjectManagement;
+using System;
 using System.Xml.Linq;
 
 namespace Nue.StandardResolver
 {
     public class ProjectContext : INuGetProjectContext
     {
-        TelemetryServiceHelper telemetryHelper;
-
-        public ProjectContext()
-        {
-            telemetryHelper = new TelemetryServiceHelper();
-        }
-
         public void Log(MessageLevel level, string message, params object[] args)
         {
             // Do your logging here...
@@ -34,16 +28,7 @@ namespace Nue.StandardResolver
 
         public NuGetActionType ActionType { get; set; }
 
-        public TelemetryServiceHelper TelemetryService
-        {
-            get
-            {
-                return telemetryHelper;
-            }
-            set
-            {
-                telemetryHelper = value;
-            }
-        }
+        Guid _operationId = Guid.NewGuid();
+        public Guid OperationId { get => _operationId; set => _operationId = value; }
     }
 }
