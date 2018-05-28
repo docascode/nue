@@ -130,7 +130,7 @@ namespace Nue.StandardResolver
                         foreach (var dll in dllFiles)
                         {
                             File.Copy(Path.Combine(pacManPackageLibPath, dll), Path.Combine(packageContainerPath, dll), true);
-                            File.Copy(Path.Combine(pacManPackageLibPath, dll + "-help.xml"), Path.Combine(packageContainerPath, Path.GetFileNameWithoutExtension(dll) + ".xml"), true);
+                            //File.Copy(Path.Combine(pacManPackageLibPath, dll + "-help.xml"), Path.Combine(packageContainerPath, Path.GetFileNameWithoutExtension(dll) + ".xml"), true);
                         }
 
                         var dependencies = from c in Directory.GetFiles(pacManPackageLibPath)
