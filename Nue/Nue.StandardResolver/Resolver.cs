@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,11 +19,12 @@ namespace Nue.StandardResolver
 {
     public class Resolver : IPackageResolver
     {
+        public const string NUGET_DEFAULT_FEED = "https://api.nuget.org/v3/index.json";
         public IDictionary<string, string> Parameters { get; set; }
 
         public async Task<bool> CopyBinarySet(PackageAtom package, string outputPath, KeyValuePair<string, string> credentials = new KeyValuePair<string, string>(), string feed = "")
         {
-            string defaultPackageSource = "https://api.nuget.org/v3/index.json";
+            string defaultPackageSource = NUGET_DEFAULT_FEED;
             if (!string.IsNullOrWhiteSpace(feed))
             {
                 defaultPackageSource = feed;
@@ -44,6 +46,27 @@ namespace Nue.StandardResolver
             ISourceRepositoryProvider sourceRepositoryProvider = new SourceRepositoryProvider(settings, providers);
 
             var packageSource = new PackageSource(defaultPackageSource);
+
+            // Get custom NuGet configuration.
+            var setting = Settings.LoadSpecificSettings(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "custom.nuget.config");
+
+            Console.WriteLine("Loaded custom settings.");
+            // Build out the source repos.
+            var packageSourceProvider = new PackageSourceProvider(setting);
+            var sources = packageSourceProvider.LoadPackageSources();
+
+            // Often times, we are working with packages that are coming from another feed, while
+            // their dependencies are still coming from the default NuGet resource. As such, we want to
+            // make sure that we are able to pull those, hence the need to _always_ have the default NuGet
+            // feed as an option.
+
+            var alternativeSourceRepositories = new List<SourceRepository>();
+            foreach (var source in sources)
+            {
+                alternativeSourceRepositories.Add(new SourceRepository(source, providers));
+            }
+
+
             if (!string.IsNullOrWhiteSpace(credentials.Key) || !string.IsNullOrWhiteSpace(credentials.Value))
             {
                 packageSource.Credentials = new PackageSourceCredential(string.Empty, credentials.Key, credentials.Value, true);
@@ -66,7 +89,7 @@ namespace Nue.StandardResolver
             var identity = new PackageIdentity(package.Name, NuGetVersion.Parse(package.Version));
             await packageManager.InstallPackageAsync(packageManager.PackagesFolderNuGetProject,
                 identity, resolutionContext, projectContext, sourceRepository,
-                null, // This is a list of secondary source respositories, probably empty
+                alternativeSourceRepositories, // This is a list of secondary source respositories, probably empty
                 CancellationToken.None);
 
             ConsoleEx.WriteLine($"Getting data for {package.Name}...", ConsoleColor.Yellow);
@@ -83,7 +106,7 @@ namespace Nue.StandardResolver
             }
             else if (package.CustomPropertyBag.ContainsKey("libpath") && !string.IsNullOrWhiteSpace(package.CustomPropertyBag["libpath"]))
             {
-                pacManPackageLibPath = pacManPackagePath + Convert.ToString(package.CustomPropertyBag["libpath"]);
+                pacManPackageLibPath = Path.Combine(pacManPackagePath,Convert.ToString(package.CustomPropertyBag["libpath"]));
             }
             else
             {
@@ -112,7 +135,7 @@ namespace Nue.StandardResolver
                     var dllFiles = new List<string>();
 
                     Console.WriteLine("Here are the XML files that we will work with:");
-                    foreach(var helpXmlFile in helpXmlFiles)
+                    foreach (var helpXmlFile in helpXmlFiles)
                     {
                         ConsoleEx.WriteLine(helpXmlFile, ConsoleColor.Blue);
                         var workingDll = Path.GetFileName(helpXmlFile).ToLower().Replace("-help.xml", "");
