@@ -39,7 +39,7 @@ namespace Nue.StandardResolver
             cmdsi.UseShellExecute = false;
 
             var configPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "custom.nuget.config");
-            cmdsi.Arguments = $"install {package.Name} -Version {package.Version} -Source {defaultPackageSource} -OutputDirectory {rootPath} -Verbosity Detailed -DisableParallelProcessing -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile {configPath}";
+            cmdsi.Arguments = $"install {package.Name} -Version {package.Version} -Source {defaultPackageSource} -OutputDirectory {rootPath} -Verbosity Detailed -DisableParallelProcessing -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile {configPath} -PreRelease";
 
             Process cmd = Process.Start(cmdsi);
             cmd.WaitForExit();
