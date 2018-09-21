@@ -1,19 +1,10 @@
 ﻿using Nue.Core;
-using NuGet.Configuration;
-using NuGet.PackageManagement;
-using NuGet.Packaging.Core;
-using NuGet.ProjectManagement;
-using NuGet.Protocol;
-using NuGet.Protocol.Core.Types;
-using NuGet.Resolver;
-using NuGet.Versioning;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Nue.StandardResolver
 {
@@ -22,7 +13,7 @@ namespace Nue.StandardResolver
         public const string NUGET_DEFAULT_FEED = "https://api.nuget.org/v3/index.json";
         public IDictionary<string, string> Parameters { get; set; }
 
-        public async Task<bool> CopyBinarySet(PackageAtom package, string outputPath, KeyValuePair<string, string> credentials = new KeyValuePair<string, string>(), string feed = "")
+        public bool CopyBinarySet(PackageAtom package, string outputPath, KeyValuePair<string, string> credentials = new KeyValuePair<string, string>(), string feed = "", string nugetPath = "")
         {
             string defaultPackageSource = NUGET_DEFAULT_FEED;
             if (!string.IsNullOrWhiteSpace(feed))
@@ -38,59 +29,20 @@ namespace Nue.StandardResolver
 
             Parameters = new Dictionary<string, string>(package.CustomPropertyBag);
 
-            var providers = new List<Lazy<INuGetResourceProvider>>();
-            providers.AddRange(Repository.Provider.GetCoreV3()); // Add v3 API support
-
             var rootPath = outputPath + "\\_pacman";
-            var settings = Settings.LoadDefaultSettings(rootPath, null, new MachineWideSettings());
-            ISourceRepositoryProvider sourceRepositoryProvider = new SourceRepositoryProvider(settings, providers);
-
-            var packageSource = new PackageSource(defaultPackageSource);
-
-            // Get custom NuGet configuration.
-            var setting = Settings.LoadSpecificSettings(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "custom.nuget.config");
-
-            Console.WriteLine("Loaded custom settings.");
-            // Build out the source repos.
-            var packageSourceProvider = new PackageSourceProvider(setting);
-            var sources = packageSourceProvider.LoadPackageSources();
-
-            // Often times, we are working with packages that are coming from another feed, while
-            // their dependencies are still coming from the default NuGet resource. As such, we want to
-            // make sure that we are able to pull those, hence the need to _always_ have the default NuGet
-            // feed as an option.
-
-            var alternativeSourceRepositories = new List<SourceRepository>();
-            foreach (var source in sources)
-            {
-                alternativeSourceRepositories.Add(new SourceRepository(source, providers));
-            }
-
-
-            if (!string.IsNullOrWhiteSpace(credentials.Key) || !string.IsNullOrWhiteSpace(credentials.Value))
-            {
-                packageSource.Credentials = new PackageSourceCredential(string.Empty, credentials.Key, credentials.Value, true);
-            }
-
-            NuGetProject project = new TargetedFolderNuGetProject(rootPath, Parameters["tfm"]);
-
-            var packageManager = new NuGetPackageManager(sourceRepositoryProvider, settings, rootPath)
-            {
-                PackagesFolderNuGetProject = (FolderNuGetProject)project
-            };
-
-            var resolutionContext = new ResolutionContext(DependencyBehavior.Lowest, true, true, VersionConstraints.None);
-
-            INuGetProjectContext projectContext = new ProjectContext();
-            var sourceRepository = new SourceRepository(packageSource, providers);
 
             ConsoleEx.WriteLine($"Attempting to install: {package.GetFullName()}. Installing...",
                     ConsoleColor.Yellow);
-            var identity = new PackageIdentity(package.Name, NuGetVersion.Parse(package.Version));
-            await packageManager.InstallPackageAsync(packageManager.PackagesFolderNuGetProject,
-                identity, resolutionContext, projectContext, sourceRepository,
-                alternativeSourceRepositories, // This is a list of secondary source respositories, probably empty
-                CancellationToken.None);
+
+            String command = $"{nugetPath}\\nuget.exe";
+            ProcessStartInfo cmdsi = new ProcessStartInfo(command);
+            cmdsi.UseShellExecute = false;
+
+            var configPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "custom.nuget.config");
+            cmdsi.Arguments = $"install {package.Name} -Version {package.Version} -Source {defaultPackageSource} -OutputDirectory {rootPath} -Verbosity Detailed -DisableParallelProcessing -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile {configPath}";
+
+            Process cmd = Process.Start(cmdsi);
+            cmd.WaitForExit();
 
             ConsoleEx.WriteLine($"Getting data for {package.Name}...", ConsoleColor.Yellow);
 

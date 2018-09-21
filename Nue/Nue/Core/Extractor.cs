@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using SearchOption = System.IO.SearchOption;
 
 namespace Nue.Core
@@ -44,7 +43,7 @@ namespace Nue.Core
             }
         }
 
-        public async static Task<bool> DownloadPackages(string packagePath, string outputPath, string targetFramework, KeyValuePair<string,string> credentials = new KeyValuePair<string,string>(), string feed = "")
+        public static bool DownloadPackages(string packagePath, string outputPath, string targetFramework, KeyValuePair<string,string> credentials = new KeyValuePair<string,string>(), string feed = "", string nugetPath = "")
         {
             if (string.IsNullOrWhiteSpace(packagePath) || string.IsNullOrWhiteSpace(outputPath)) return false;
 
@@ -82,7 +81,7 @@ namespace Nue.Core
                     resolver = new Resolver();
                 }
 
-                var binaries = await resolver.CopyBinarySet(package, outputPath, credentials, feed);
+                var binaries = resolver.CopyBinarySet(package, outputPath, credentials, feed, nugetPath);
 
                 try
                 {

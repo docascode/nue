@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using CommandLine;
 using Nue.Core;
 using Nue.Models;
@@ -13,17 +12,16 @@ namespace Nue
 
         private static void Main(string[] args)
         {
+            Console.WriteLine("nue 2.0.0-9212018.1440");
+
             Parser.Default.ParseArguments<CommandLineOptions>(args).WithParsed(options =>
             {
                 // Extracts the content from existing online NuGet packages.
                 if (options.Mode == "extract")
                 {
-                    Task.Run(async () =>
-                    {
-                        var completed = await Extractor.DownloadPackages(options.PackagePath, options.OutputPath, options.Framework, new System.Collections.Generic.KeyValuePair<string, string>(options.Username,options.Password), options.Feed);
+                    var completed = Extractor.DownloadPackages(options.PackagePath, options.OutputPath, options.Framework, new System.Collections.Generic.KeyValuePair<string, string>(options.Username, options.Password), options.Feed, options.NuGetPath);
 
-                        Console.Write("Completed successfully: " + completed);
-                    }).Wait();
+                    Console.Write("Completed successfully: " + completed);
                 }
                 // Generate a list of packages.
                 else if (options.Mode == "listpac")
