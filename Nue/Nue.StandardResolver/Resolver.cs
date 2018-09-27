@@ -140,7 +140,7 @@ namespace Nue.StandardResolver
 
                     // It might be possible that the author specified an additional dependency folder.
                     // If that is the case, we are just going to add it to the existing set of folders.
-                    if (!string.IsNullOrWhiteSpace(package.CustomPropertyBag["customDependencyFolder"]))
+                    if (dependencyFolders != null && !string.IsNullOrWhiteSpace(package.CustomPropertyBag["customDependencyFolder"]))
                     {
                         dependencyFolders.Add(Path.Combine(pacManPackagePath, package.CustomPropertyBag["customDependencyFolder"]));
                     }
