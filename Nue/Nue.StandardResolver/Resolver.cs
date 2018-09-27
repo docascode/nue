@@ -49,9 +49,14 @@ namespace Nue.StandardResolver
 
             ConsoleEx.WriteLine($"Getting data for {package.Name}...", ConsoleColor.Yellow);
 
+            var workingFolder = Path.Combine(outputPath, "_pacman");
+
             var packageFqn = package.Name + "." + package.Version;
-            var pacManPackagePath = outputPath + "\\_pacman\\" + packageFqn;
+            var pacManPackagePath = Path.Combine(workingFolder, packageFqn);
+
             string pacManPackageLibPath = "";
+
+            pacManPackagePath = (from c in Directory.GetDirectories(workingFolder) where c.StartsWith(pacManPackagePath, StringComparison.InvariantCultureIgnoreCase) select c).FirstOrDefault();
 
             // In some cases, the lookup might be happening inside a custom path.
             // For PowerShell, this should be done inside the root directory.
@@ -134,13 +139,22 @@ namespace Nue.StandardResolver
                     var closestDirectory = Helpers.GetBestLibMatch(Parameters["tfm"], directories);
 
                     var availableMonikers = new List<string>();
-                    var dependencyFolders = (from c in Directory.GetDirectories(outputPath + "\\_pacman")
-                                            where Path.GetFileName(c).ToLower() != packageFqn.ToLower()
-                                            select c).ToList();
+                    var dependencyFolders = new List<string>();
+
+                    try
+                    {
+                        dependencyFolders = (from c in Directory.GetDirectories(outputPath + "\\_pacman")
+                                             where Path.GetFileName(c).ToLower() != packageFqn.ToLower()
+                                             select c).ToList();
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Could not create list of dependencies.");
+                    }
 
                     // It might be possible that the author specified an additional dependency folder.
                     // If that is the case, we are just going to add it to the existing set of folders.
-                    if (dependencyFolders != null && !string.IsNullOrWhiteSpace(package.CustomPropertyBag["customDependencyFolder"]))
+                    if (package.CustomPropertyBag.ContainsKey("customDependencyFolder"))
                     {
                         dependencyFolders.Add(Path.Combine(pacManPackagePath, package.CustomPropertyBag["customDependencyFolder"]));
                     }
