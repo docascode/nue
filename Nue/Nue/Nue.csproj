@@ -67,7 +67,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\Extractor.cs" />
-    <Compile Include="Core\Lister.cs" />
     <Compile Include="Models\CommandLineOptions.cs" />
     <Compile Include="Models\NuGetDataContainer.cs" />
     <Compile Include="Program.cs" />
