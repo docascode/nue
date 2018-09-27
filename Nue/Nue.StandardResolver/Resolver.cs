@@ -142,7 +142,7 @@ namespace Nue.StandardResolver
                     // If that is the case, we are just going to add it to the existing set of folders.
                     if (!string.IsNullOrWhiteSpace(package.CustomPropertyBag["customDependencyFolder"]))
                     {
-                        dependencyFolders.Add(package.CustomPropertyBag["customDependencyFolder"]);
+                        dependencyFolders.Add(Path.Combine(pacManPackagePath, package.CustomPropertyBag["customDependencyFolder"]));
                     }
 
                     Console.WriteLine("Currently available lib sets:");
@@ -248,6 +248,17 @@ namespace Nue.StandardResolver
                                             Path.GetFileName(binary)), true);
 
                             }
+                        }
+                        else
+                        {
+                            // The "lib" folder does not exist, so let's just look in the root.
+                            var dependencyBinaries = Directory.EnumerateFiles(dependency, "*.*", SearchOption.TopDirectoryOnly)
+                                .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
+
+                            foreach (var binary in dependencyBinaries)
+                                File.Copy(binary,
+                                    Path.Combine(outputPath, "dependencies", package.Moniker,
+                                        Path.GetFileName(binary)), true);
                         }
                     }
                 }
