@@ -134,9 +134,16 @@ namespace Nue.StandardResolver
                     var closestDirectory = Helpers.GetBestLibMatch(Parameters["tfm"], directories);
 
                     var availableMonikers = new List<string>();
-                    var dependencyFolders = from c in Directory.GetDirectories(outputPath + "\\_pacman")
+                    var dependencyFolders = (from c in Directory.GetDirectories(outputPath + "\\_pacman")
                                             where Path.GetFileName(c).ToLower() != packageFqn.ToLower()
-                                            select c;
+                                            select c).ToList();
+
+                    // It might be possible that the author specified an additional dependency folder.
+                    // If that is the case, we are just going to add it to the existing set of folders.
+                    if (!string.IsNullOrWhiteSpace(package.CustomPropertyBag["customDependencyFolder"]))
+                    {
+                        dependencyFolders.Add(package.CustomPropertyBag["customDependencyFolder"]);
+                    }
 
                     Console.WriteLine("Currently available lib sets:");
                     ConsoleEx.WriteLine("|__", ConsoleColor.Yellow);
