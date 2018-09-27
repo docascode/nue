@@ -35,6 +35,9 @@ namespace Nue.StandardResolver
                     ConsoleColor.Yellow);
 
             String command = $"{nugetPath}\\nuget.exe";
+
+            ConsoleEx.WriteLine($"Assumed nuget.exe path: {command}", ConsoleColor.Yellow);
+
             ProcessStartInfo cmdsi = new ProcessStartInfo(command);
             cmdsi.UseShellExecute = false;
 
