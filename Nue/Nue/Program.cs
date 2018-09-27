@@ -19,6 +19,9 @@ namespace Nue
                 // Extracts the content from existing online NuGet packages.
                 if (options.Mode == "extract")
                 {
+                    Console.WriteLine("Working on extracting...");
+                    Console.WriteLine("Declared NuGet path: " + options.NuGetPath);
+
                     var completed = Extractor.DownloadPackages(options.PackagePath, options.OutputPath, options.Framework, new System.Collections.Generic.KeyValuePair<string, string>(options.Username, options.Password), options.Feed, options.NuGetPath);
 
                     Console.Write("Completed successfully: " + completed);
