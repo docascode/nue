@@ -66,9 +66,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\DualOutput.cs" />
     <Compile Include="Core\Extractor.cs" />
     <Compile Include="Models\CommandLineOptions.cs" />
-    <Compile Include="Models\NuGetDataContainer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Nue.Core
 {
@@ -42,23 +44,27 @@ namespace Nue.Core
 
             PreparePropertyBag(packages, targetFramework);
 
-            foreach (var package in packages)
+            Parallel.ForEach(packages, (package) =>
             {
                 // Package resolver that will be used to get the full path to binaries.
-                IPackageResolver resolver =  new Resolver();
+                IPackageResolver resolver = new Resolver();
 
-                var binaries = resolver.CopyBinarySet(package, outputPath, credentials, feed, nugetPath);
+                var currentOutputPrefix = Guid.NewGuid().ToString();
+                var isSuccess = resolver.CopyBinarySet(package, outputPath, credentials, feed, nugetPath, currentOutputPrefix);
 
                 try
                 {
-                    ConsoleEx.WriteLine($"Deleting {Path.Combine(outputPath, "_pacman")}", ConsoleColor.Red);
-                    Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman"));
+                    Console.WriteLine($"[info] Deleting {Path.Combine(outputPath, "_pacman" + currentOutputPrefix)}");
+                    Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman" + currentOutputPrefix));
                 }
                 catch
                 {
-                    Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman"));
+                    Console.WriteLine("[error] Errored out the first time we tried to delete the folder. Retrying...");
+
+                    Thread.Sleep(2000);
+                    Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman" + currentOutputPrefix));
                 }
-            }
+            });
 
             return true;
         }
@@ -79,21 +85,35 @@ namespace Nue.Core
                     if (fields == null) continue;
 
                     // Given the conventions, let's find out how many versions are requested to be downloaded.
-                    var requestedVersions = fields.Length - 2;
 
-                    if (requestedVersions < 1) continue;
-                    for (var i = 2; i < 2 + requestedVersions; i++)
+                    for (var i = 0; i < fields.Length; i++)
                     {
-                        var pAtom = new PackageAtom
+                        var pAtom = new PackageAtom();
+
+                        if (fields.Length == 2)
                         {
-                            Moniker = fields[0] + "-" + fields[i],
-                            MonikerBase = fields[0],
-                            Name = fields[1],
-                            Version = fields[i]
-                        };
+                            // There is no version specified.
+                            pAtom.Moniker = fields[0];
+                            pAtom.MonikerBase = fields[0];
+                            pAtom.Name = fields[1];
+                            pAtom.Version = "Unknown";
+                        }
+                        else if (fields.Length > 2)
+                        {
+                            // There is a version specified.
+                            pAtom.Moniker = fields[0] + "-" + fields[2];
+                            pAtom.MonikerBase = fields[0];
+                            pAtom.Name = fields[1];
+                            pAtom.Version = fields[2];
+                        }
+                        else
+                        {
+                            Console.WriteLine("[error] Could not read in package information for " + fields.ToString());
+                            break;
+                        }
 
                         // Property bag will be formatted like:
-                        // [property1=value1,property2=value2]PackageId
+                        // [property1=value1;property2=value2]PackageId
                         var propertyBagRegex = @"(\[.+\])";
                         Regex formalizedRegEx = new Regex(propertyBagRegex);
                         var match = formalizedRegEx.Match(pAtom.Name);

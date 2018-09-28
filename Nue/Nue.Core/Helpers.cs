@@ -69,10 +69,65 @@ namespace Nue.Core
 
             if (!string.IsNullOrWhiteSpace(folder)) return folder;
             // Given that we have found nothing, is there anything that matches the first 3 characters?
-            var broadAssumptionRegex = new Regex($@"(?<full>(?<version>{tfmBase.Substring(0,3)})(?<version>[0-9\.0-9]+))", RegexOptions.IgnoreCase);
+            var broadAssumptionRegex = new Regex($@"(?<full>(?<version>{tfmBase.Substring(0, 3)})(?<version>[0-9\.0-9]+))", RegexOptions.IgnoreCase);
             folder = GetWinningFolder(folderPaths, broadAssumptionRegex);
 
             return folder;
+        }
+
+        public static bool CopyLibraryContent(string source, string destination, PackageAtom package)
+        {
+            var binaries = new List<string>();
+            var docFiles = new List<string>();
+
+            try
+            {
+                binaries = Directory.GetFiles(source, "*.*", SearchOption.TopDirectoryOnly)
+                                .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).ToList();
+            }
+            catch
+            {
+                Console.WriteLine($"[error] Could not get binaries for {package.Name} from {source}.");
+                return false;
+            }
+
+
+            foreach (var binary in binaries)
+                File.Copy(binary, Path.Combine(destination, Path.GetFileName(binary)), true);
+
+            try
+            {
+                docFiles = Directory.GetFiles(source, "*.xml", SearchOption.TopDirectoryOnly).ToList();
+                foreach (var docFile in docFiles)
+                    File.Copy(docFile, Path.Combine(destination, Path.GetFileName(docFile)), true);
+            }
+            catch
+            {
+                Console.WriteLine($"[warning] Could not get documentation files for {package.Name} from {source}.");
+            }
+
+            return true;
+        }
+
+        public static string BuildCommandString(PackageAtom package, string rootPath, string configPath, string defaultPackageSource)
+        {
+            var baseline = $"install {package.Name} -Source {defaultPackageSource} -OutputDirectory {rootPath} -Verbosity Quiet -DisableParallelProcessing -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile {configPath}";
+
+            if (!string.Equals(package.Version, "Unknown", StringComparison.CurrentCultureIgnoreCase))
+            {
+                baseline += $" -Version {package.Version}";
+            }
+
+            if (package.CustomPropertyBag.ContainsKey("isPrerelease"))
+            {
+                bool shouldIncludePrerelease = Convert.ToBoolean(package.CustomPropertyBag["isPrerelease"]);
+                if (shouldIncludePrerelease)
+                {
+                    baseline += " -PreRelease";
+                }
+            }
+
+            return baseline;
         }
 
         private static string GetWinningFolder(string[] folders, Regex regex)
@@ -84,9 +139,6 @@ namespace Nue.Core
                 var token = regex.Match(exactFolderName);
                 if (!token.Success) continue;
                 var folderVersion = token.Groups["version"].Value;
-
-                Debug.WriteLine(exactFolderName);
-                Debug.WriteLine(folderVersion);
 
                 if (!string.IsNullOrEmpty(folderVersion))
                 {

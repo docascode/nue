@@ -13,7 +13,7 @@ namespace Nue.Core
         public Dictionary<string,string> CustomPropertyBag { get; set; }
         public string GetFullName()
         {
-            return $"{Name} {Version}";
+            return $"{Name} [Version {Version}]";
         }
     }
 }
