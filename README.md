@@ -50,3 +50,4 @@ The following custom parameters are supported:
 | `tfm` | Overrides the global TFM for the specific package. |
 | `altDep` | Alternative dependency TFM - helpful when you have a specific TFM for the core library, but a different TFM for dependency libraries. |
 | `isPrerelease` | Required to install a pre-release package. |
+| `customDependencyFolder` | A custom folder from which we need to pull dependencies. Relative to the package root. |
