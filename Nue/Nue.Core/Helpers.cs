@@ -111,7 +111,7 @@ namespace Nue.Core
 
         public static string BuildCommandString(PackageAtom package, string rootPath, string configPath, string defaultPackageSource)
         {
-            var baseline = $"install {package.Name} -Source {defaultPackageSource} -OutputDirectory {rootPath} -Verbosity Quiet -DisableParallelProcessing -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile {configPath}";
+            var baseline = $@"install {package.Name} -Source ""{defaultPackageSource.Trim('"')}"" -OutputDirectory ""{rootPath.Trim('"')}"" -Verbosity Quiet -DisableParallelProcessing -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile ""{configPath.Trim('"')}""";
 
             if (!string.Equals(package.Version, "Unknown", StringComparison.CurrentCultureIgnoreCase))
             {
