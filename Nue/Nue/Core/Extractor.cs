@@ -85,61 +85,57 @@ namespace Nue.Core
                     if (fields == null) continue;
 
                     // Given the conventions, let's find out how many versions are requested to be downloaded.
+                    var pAtom = new PackageAtom();
 
-                    for (var i = 0; i < fields.Length; i++)
+                    if (fields.Length == 2)
                     {
-                        var pAtom = new PackageAtom();
+                        // There is no version specified.
+                        pAtom.Moniker = fields[0];
+                        pAtom.MonikerBase = fields[0];
+                        pAtom.Name = fields[1];
+                        pAtom.Version = "Unknown";
+                    }
+                    else if (fields.Length > 2)
+                    {
+                        // There is a version specified.
+                        pAtom.Moniker = fields[0] + "-" + fields[2];
+                        pAtom.MonikerBase = fields[0];
+                        pAtom.Name = fields[1];
+                        pAtom.Version = fields[2];
+                    }
+                    else
+                    {
+                        Console.WriteLine("[error] Could not read in package information for " + fields.ToString());
+                        break;
+                    }
 
-                        if (fields.Length == 2)
-                        {
-                            // There is no version specified.
-                            pAtom.Moniker = fields[0];
-                            pAtom.MonikerBase = fields[0];
-                            pAtom.Name = fields[1];
-                            pAtom.Version = "Unknown";
-                        }
-                        else if (fields.Length > 2)
-                        {
-                            // There is a version specified.
-                            pAtom.Moniker = fields[0] + "-" + fields[2];
-                            pAtom.MonikerBase = fields[0];
-                            pAtom.Name = fields[1];
-                            pAtom.Version = fields[2];
-                        }
-                        else
-                        {
-                            Console.WriteLine("[error] Could not read in package information for " + fields.ToString());
-                            break;
-                        }
+                    // Property bag will be formatted like:
+                    // [property1=value1;property2=value2]PackageId
+                    var propertyBagRegex = @"(\[.+\])";
+                    Regex formalizedRegEx = new Regex(propertyBagRegex);
+                    var match = formalizedRegEx.Match(pAtom.Name);
 
-                        // Property bag will be formatted like:
-                        // [property1=value1;property2=value2]PackageId
-                        var propertyBagRegex = @"(\[.+\])";
-                        Regex formalizedRegEx = new Regex(propertyBagRegex);
-                        var match = formalizedRegEx.Match(pAtom.Name);
-
-                        if (match.Success)
+                    if (match.Success)
+                    {
+                        // There seems to be a property bag attached to the name.
+                        var rawPropertyBag = match.Value.Replace("[","").Replace("]","").Trim();
+                        if (!string.IsNullOrWhiteSpace(rawPropertyBag))
                         {
-                            // There seems to be a property bag attached to the name.
-                            var rawPropertyBag = match.Value.Replace("[","").Replace("]","").Trim();
-                            if (!string.IsNullOrWhiteSpace(rawPropertyBag))
+                            // Normalize the package name without the property bag.
+                            pAtom.Name = pAtom.Name.Replace(match.Value, "");
+                            pAtom.CustomPropertyBag = new Dictionary<string, string>();
+
+                            // Avoiding the case of empty property bag, looks like in this case we are good.
+                            var properties = rawPropertyBag.Split(new char[] { ';' });
+                            foreach(var property in properties)
                             {
-                                // Normalize the package name without the property bag.
-                                pAtom.Name = pAtom.Name.Replace(match.Value, "");
-                                pAtom.CustomPropertyBag = new Dictionary<string, string>();
-
-                                // Avoiding the case of empty property bag, looks like in this case we are good.
-                                var properties = rawPropertyBag.Split(new char[] { ';' });
-                                foreach(var property in properties)
-                                {
-                                    var splitProperty = property.Split(new char[] { '=' });
-                                    pAtom.CustomPropertyBag.Add(splitProperty[0], splitProperty[1]);
-                                }
+                                var splitProperty = property.Split(new char[] { '=' });
+                                pAtom.CustomPropertyBag.Add(splitProperty[0], splitProperty[1]);
                             }
                         }
-
-                           packages.Add(pAtom);
                     }
+
+                    packages.Add(pAtom);
                 }
             }
 
