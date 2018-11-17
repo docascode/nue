@@ -44,7 +44,7 @@ namespace Nue.Core
 
             PreparePropertyBag(packages, targetFramework);
 
-            Parallel.ForEach(packages, (package) =>
+            foreach(package in packages)
             {
                 // Package resolver that will be used to get the full path to binaries.
                 IPackageResolver resolver = new Resolver();
@@ -64,7 +64,7 @@ namespace Nue.Core
                     Thread.Sleep(2000);
                     Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman" + currentOutputPrefix));
                 }
-            });
+            }
 
             return true;
         }
