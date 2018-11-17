@@ -44,7 +44,7 @@ namespace Nue.Core
 
             PreparePropertyBag(packages, targetFramework);
 
-            foreach(package in packages)
+            foreach(var package in packages)
             {
                 // Package resolver that will be used to get the full path to binaries.
                 IPackageResolver resolver = new Resolver();
