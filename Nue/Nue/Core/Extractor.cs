@@ -49,7 +49,7 @@ namespace Nue.Core
                 // Package resolver that will be used to get the full path to binaries.
                 IPackageResolver resolver = new Resolver();
 
-                var currentOutputPrefix = Guid.NewGuid().ToString();
+                var currentOutputPrefix = Guid.NewGuid().ToString().Substring(0,5);
                 var isSuccess = resolver.CopyBinarySet(package, outputPath, credentials, feed, nugetPath, currentOutputPrefix);
 
                 try
