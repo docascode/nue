@@ -113,6 +113,11 @@ namespace Nue.Core
         {
             var baseline = $@"install {package.Name} -Source ""{defaultPackageSource.Trim('"')}"" -OutputDirectory ""{rootPath.Trim('"')}"" -Verbosity Quiet -DisableParallelProcessing -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile ""{configPath.Trim('"')}""";
 
+            if (!string.IsNullOrWhiteSpace(package.CustomPropertyBag["tfm"]))
+            {
+                baseline += $" -Framework {package.CustomPropertyBag["tfm"]}";
+            }
+
             if (!string.Equals(package.Version, "Unknown", StringComparison.CurrentCultureIgnoreCase))
             {
                 baseline += $" -Version {package.Version}";
