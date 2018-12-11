@@ -113,23 +113,18 @@ namespace Nue.Core
         {
             var baseline = $@"install {package.Name} -Source ""{defaultPackageSource.Trim('"')}"" -OutputDirectory ""{rootPath.Trim('"')}"" -Verbosity Quiet -DisableParallelProcessing -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile ""{configPath.Trim('"')}""";
 
-            if (!string.IsNullOrWhiteSpace(package.CustomPropertyBag["tfm"]))
+            if (!string.IsNullOrWhiteSpace(package.TFM))
             {
-                baseline += $" -Framework {package.CustomPropertyBag["tfm"]}";
+                baseline += $" -Framework {package.TFM}";
             }
 
-            if (!string.Equals(package.Version, "Unknown", StringComparison.CurrentCultureIgnoreCase))
+            if (package.VersionOption == VersionOption.Custom)
             {
-                baseline += $" -Version {package.Version}";
+                baseline += $" -Version {package.CustomVersion}";
             }
-
-            if (package.CustomPropertyBag.ContainsKey("isPrerelease"))
+            else if (package.VersionOption == VersionOption.Prerelease)
             {
-                bool shouldIncludePrerelease = Convert.ToBoolean(package.CustomPropertyBag["isPrerelease"]);
-                if (shouldIncludePrerelease)
-                {
-                    baseline += " -PreRelease";
-                }
+                baseline += " -PreRelease";
             }
 
             return baseline;
