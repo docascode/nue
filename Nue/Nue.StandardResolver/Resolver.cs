@@ -69,8 +69,9 @@ namespace Nue.StandardResolver
                     pacManPackageLibPath = pacManPackagePath + "\\lib";
                 }
 
-                var packageContainerPath = Path.Combine(outputPath, package.Moniker);
-
+                var packageContainerPath = string.IsNullOrEmpty(package.Moniker)
+                    ? outputPath 
+                    : Path.Combine(outputPath, package.Moniker);
 
                 // Among other things, we need to make sure that the package was not already extracted for 
                 // another team.

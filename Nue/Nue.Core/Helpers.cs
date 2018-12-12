@@ -113,7 +113,7 @@ namespace Nue.Core
         {
             defaultPackageSource = defaultPackageSource?.Trim('"');
 
-            var baseline = $@"install {package.Name} -OutputDirectory ""{rootPath.Trim('"')}"" -Verbosity Quiet -DisableParallelProcessing -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile ""{configPath.Trim('"')}""";
+            var baseline = $@"install {package.Name} -OutputDirectory ""{rootPath.Trim('"')}"" -Verbosity Quiet -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile ""{configPath.Trim('"')}""";
 
             if (!string.IsNullOrWhiteSpace(package.CustomProperties.TFM))
             {
