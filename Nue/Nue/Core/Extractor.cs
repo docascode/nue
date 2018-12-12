@@ -15,23 +15,52 @@ namespace Nue.Core
         {
             foreach (var package in packages)
             {
-
                 if (package.CustomPropertyBag ==null)
                 {
                     package.CustomPropertyBag = new Dictionary<string, string>();
                 }
+                if (package.CustomProperties == null)
+                {
+                    package.CustomProperties = new PackageAdditionalProperties();
+                }
 
                 // Inject the TFM into the resolver if none was specified for the package.
-                if (!package.CustomPropertyBag.ContainsKey("tfm"))
+                if (package.CustomPropertyBag.TryGetValue("tfm", out string tfmVal))
                 {
-                    package.CustomPropertyBag.Add("tfm", defaultTargetFramework);
+                    package.TFM = tfmVal;
+                }
+                else if (string.IsNullOrEmpty(package.TFM))
+                {
+                    package.TFM = defaultTargetFramework;
                 }
 
                 // Determines whether a package is a PowerShell package - there is some custom logic that we need
                 // to apply to determine what the assemblies are there.
-                if (package.CustomPropertyBag.ContainsKey("ps"))
+                if (package.CustomPropertyBag.TryGetValue("ps", out string psVal))
                 {
-                    package.IsPowerShellPackage = Convert.ToBoolean(package.CustomPropertyBag["ps"]);
+                    package.IsPowerShellPackage = Convert.ToBoolean(psVal);
+                }
+
+                if (package.CustomPropertyBag.TryGetValue("isPrerelease", out string preReleaseVal)
+                    && Convert.ToBoolean(preReleaseVal)
+                    && package.VersionOption != VersionOption.Custom)
+                {
+                    package.VersionOption = VersionOption.Prerelease;
+                }
+
+                if (package.CustomPropertyBag.TryGetValue("libpath", out string libpathVal))
+                {
+                    package.CustomProperties.CustomLibraryFolder = libpathVal;
+                }
+
+                if (package.CustomPropertyBag.TryGetValue("customDependencyFolder", out string depPathVal))
+                {
+                    package.CustomProperties.CustomDependencyFolder = depPathVal;
+                }
+
+                if (package.CustomPropertyBag.TryGetValue("customSource", out string feedVal))
+                {
+                    package.CustomProperties.CustomFeed = feedVal;
                 }
             }
         }
@@ -71,6 +100,21 @@ namespace Nue.Core
 
         private static List<PackageAtom> GetPackagesFromFile(string packagePath)
         {
+            if (packagePath.EndsWith(".csv"))
+            {
+                return GetPackagesFromCSVFile(packagePath);
+            }
+            else if (packagePath.EndsWith(".json"))
+            {
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<List<PackageAtom>>(File.ReadAllText(packagePath));
+            }
+            Console.WriteLine($"[error] Cannot recognize {packagePath}.");
+
+            return null;
+        }
+
+        private static List<PackageAtom> GetPackagesFromCSVFile(string packagePath)
+        {
             var packages = new List<PackageAtom>();
 
             using (var parser = new TextFieldParser(packagePath))
@@ -91,17 +135,16 @@ namespace Nue.Core
                     {
                         // There is no version specified.
                         pAtom.Moniker = fields[0];
-                        pAtom.MonikerBase = fields[0];
                         pAtom.Name = fields[1];
-                        pAtom.Version = "Unknown";
+                        pAtom.VersionOption = VersionOption.Release;
                     }
                     else if (fields.Length > 2)
                     {
                         // There is a version specified.
                         pAtom.Moniker = fields[0] + "-" + fields[2];
-                        pAtom.MonikerBase = fields[0];
                         pAtom.Name = fields[1];
-                        pAtom.Version = fields[2];
+                        pAtom.VersionOption = VersionOption.Custom;
+                        pAtom.CustomVersion = fields[2];
                     }
                     else
                     {
@@ -118,7 +161,7 @@ namespace Nue.Core
                     if (match.Success)
                     {
                         // There seems to be a property bag attached to the name.
-                        var rawPropertyBag = match.Value.Replace("[","").Replace("]","").Trim();
+                        var rawPropertyBag = match.Value.Replace("[", "").Replace("]", "").Trim();
                         if (!string.IsNullOrWhiteSpace(rawPropertyBag))
                         {
                             // Normalize the package name without the property bag.
@@ -127,7 +170,7 @@ namespace Nue.Core
 
                             // Avoiding the case of empty property bag, looks like in this case we are good.
                             var properties = rawPropertyBag.Split(new char[] { ';' });
-                            foreach(var property in properties)
+                            foreach (var property in properties)
                             {
                                 var splitProperty = property.Split(new char[] { '=' });
                                 pAtom.CustomPropertyBag.Add(splitProperty[0], splitProperty[1]);
