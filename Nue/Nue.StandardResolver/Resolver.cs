@@ -69,13 +69,13 @@ namespace Nue.StandardResolver
                     pacManPackageLibPath = pacManPackagePath + "\\lib";
                 }
 
-                var packageContainerPath = string.IsNullOrEmpty(package.Moniker)
-                    ? outputPath 
-                    : Path.Combine(outputPath, package.Moniker);
+                var packageFolderId = string.IsNullOrEmpty(package.Moniker) ? package.Name : package.Moniker;
+                var packageContainerPath = Path.Combine(outputPath, packageFolderId);
+                var packageDependencyContainerPath = Path.Combine(outputPath, "dependencies", packageFolderId);
 
                 // Among other things, we need to make sure that the package was not already extracted for 
                 // another team.
-                if (Directory.Exists(pacManPackageLibPath) && !Directory.Exists(packageContainerPath))
+                if (Directory.Exists(pacManPackageLibPath))
                 {
                     Directory.CreateDirectory(packageContainerPath);
 
@@ -228,17 +228,15 @@ namespace Nue.StandardResolver
 
                                         if (dFrameworkIsAvailable)
                                         {
-                                            Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
-                                                package.Moniker));
+                                            Directory.CreateDirectory(packageDependencyContainerPath);
 
                                             var dependencyBinaries = Directory.EnumerateFiles(closestDepLibFolder, "*.*", SearchOption.TopDirectoryOnly)
                                             .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
 
                                             foreach (var binary in dependencyBinaries)
                                                 File.Copy(binary,
-                                                    Path.Combine(outputPath, "dependencies", package.Moniker,
-                                                        Path.GetFileName(binary)), true);
-
+                                                    Path.Combine(packageDependencyContainerPath, Path.GetFileName(binary)),
+                                                    true);
                                         }
                                     }
                                     else
@@ -249,8 +247,8 @@ namespace Nue.StandardResolver
 
                                         foreach (var binary in dependencyBinaries)
                                             File.Copy(binary,
-                                                Path.Combine(outputPath, "dependencies", package.Moniker,
-                                                    Path.GetFileName(binary)), true);
+                                                Path.Combine(packageDependencyContainerPath, Path.GetFileName(binary)),
+                                                true);
                                     }
                                 }
                             }
