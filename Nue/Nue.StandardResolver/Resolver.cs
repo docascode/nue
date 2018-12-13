@@ -44,6 +44,7 @@ namespace Nue.StandardResolver
 
             string commandString = Helpers.BuildCommandString(package, rootPath, configPath, defaultPackageSource);
             cmdsi.Arguments = commandString;
+            Console.WriteLine($"[info] nuget.exe {commandString}");
 
             Process cmd = Process.Start(cmdsi);
             cmd.WaitForExit();
