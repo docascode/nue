@@ -45,6 +45,9 @@ namespace Nue.Core
         [JsonProperty("depFolder")]
         public string CustomDependencyFolder { get; set; }
 
+        [JsonProperty("tfm")]
+        public string TFM { get; set; }
+
         [JsonProperty("excludedDlls")]
         public string[] ExcludedDlls { get; set; }
     }
