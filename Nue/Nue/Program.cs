@@ -21,7 +21,8 @@ namespace Nue
             {
                 Console.WriteLine("[info] Declared NuGet path: " + options.NuGetPath);
 
-                var completed = Extractor.DownloadPackages(options.PackagePath, options.OutputPath, options.Framework, new System.Collections.Generic.KeyValuePair<string, string>(options.Username, options.Password), options.Feed, options.NuGetPath);
+                RunSettings runSettings = new RunSettings(options.Framework, options.Feed, options.NuGetPath, options.OutputPath);
+                var completed = Extractor.DownloadPackages(options.PackagePath, runSettings);
 
                 Console.WriteLine("[info] Completed successfully: " + completed);
             });

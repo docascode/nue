@@ -18,9 +18,6 @@ namespace Nue.Core
         [JsonProperty("customVersion")]
         public string CustomVersion { get; set; }
 
-        [JsonProperty("tfm")]
-        public string TFM { get; set; }
-
         public bool IsPowerShellPackage { get; set; }
 
         [JsonProperty("customProperties")]

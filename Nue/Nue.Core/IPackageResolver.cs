@@ -5,6 +5,6 @@ namespace Nue.Core
 {
     public interface IPackageResolver
     {
-        bool CopyBinarySet(PackageAtom package, string outputPath, KeyValuePair<string, string> credentials = new KeyValuePair<string, string>(), string feed = "", string nugetPath = "", string outputPrefix = "");
+        bool CopyBinarySet(PackageAtom package, RunSettings runSettings, string outputPrefix = "");
     }
 }

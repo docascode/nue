@@ -10,17 +10,17 @@ namespace Nue.StandardResolver
 {
     public class Resolver : IPackageResolver
     {
-        public const string NUGET_DEFAULT_FEED = "https://api.nuget.org/v3/index.json";
-
-        public bool CopyBinarySet(PackageAtom package, string outputPath, KeyValuePair<string, string> credentials = new KeyValuePair<string, string>(), string feed = "", string nugetPath = "", string outputPrefix = "")
+        public bool CopyBinarySet(
+            PackageAtom package,
+            RunSettings runSettings,
+            string outputPrefix = "")
         {
-            string defaultPackageSource = package.CustomProperties.CustomFeed ?? feed ?? NUGET_DEFAULT_FEED;
-
-            var rootPath = outputPath + "\\_pacman" + outputPrefix;
+            var tfm = package.CustomProperties.TFM ?? runSettings.TFM;
+            var rootPath = runSettings.OutputPath + "\\_pacman" + outputPrefix;
 
             Console.WriteLine($"[info] Attempting to install: {package.GetFullName()}...");
 
-            String command = $"{nugetPath}\\nuget.exe";
+            string command = $"{runSettings.NugetPath}\\nuget.exe";
 
             ProcessStartInfo cmdsi = new ProcessStartInfo(command)
             {
@@ -29,8 +29,10 @@ namespace Nue.StandardResolver
 
             var configPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "custom.nuget.config");
 
-            string commandString = Helpers.BuildCommandString(package, rootPath, configPath, defaultPackageSource);
+            string commandString = Helpers.BuildCommandString(package, rootPath, configPath, runSettings);
             cmdsi.Arguments = commandString;
+            Console.WriteLine($"[info] nuget.exe {commandString}");
+
             Console.WriteLine($"[info] nuget.exe {commandString}");
 
             Process cmd = Process.Start(cmdsi);
@@ -71,8 +73,8 @@ namespace Nue.StandardResolver
                 }
 
                 var packageFolderId = string.IsNullOrEmpty(package.Moniker) ? package.Name : package.Moniker;
-                var packageContainerPath = Path.Combine(outputPath, packageFolderId);
-                var packageDependencyContainerPath = Path.Combine(outputPath, "dependencies", packageFolderId);
+                var packageContainerPath = Path.Combine(runSettings.OutputPath, packageFolderId);
+                var packageDependencyContainerPath = Path.Combine(runSettings.OutputPath, "dependencies", packageFolderId);
 
                 // Among other things, we need to make sure that the package was not already extracted for 
                 // another team.
@@ -115,24 +117,23 @@ namespace Nue.StandardResolver
 
                             if (dependencies.Any())
                             {
-                                Directory.CreateDirectory(Path.Combine(outputPath, "dependencies", package.Moniker));
+                                Directory.CreateDirectory(packageDependencyContainerPath);
 
                                 foreach (var dependency in dependencies)
                                 {
 
-                                    File.Copy(dependency, Path.Combine(outputPath, "dependencies", package.Moniker, Path.GetFileName(dependency)), true);
+                                    File.Copy(dependency, Path.Combine(packageDependencyContainerPath, Path.GetFileName(dependency)), true);
                                 }
                             }
                         }
                     }
                     else
                     {
-                        var availableMonikers = new List<string>();
                         var dependencyFolders = new List<string>();
 
                         // Directory exists, so we should proceed to package extraction.
                         var directories = Directory.GetDirectories(pacManPackageLibPath);
-                        var closestDirectory = Helpers.GetBestLibMatch(package.TFM, directories);
+                        var closestDirectory = Helpers.GetBestLibMatch(tfm, directories);
 
                         try
                         {
@@ -157,7 +158,6 @@ namespace Nue.StandardResolver
                         foreach (var folder in directories)
                         {
                             var tfmFolder = Path.GetFileName(folder);
-                            availableMonikers.Add(tfmFolder);
                             informationalPackageString += "   |___" + tfmFolder + "\n";
                         }
 
@@ -209,7 +209,7 @@ namespace Nue.StandardResolver
                                         }
 
                                         var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
-                                        var closestDepLibFolder = Helpers.GetBestLibMatch(package.TFM, dependencyLibFolders);
+                                        var closestDepLibFolder = Helpers.GetBestLibMatch(tfm, dependencyLibFolders);
 
                                         if (string.IsNullOrWhiteSpace(closestDepLibFolder))
                                         {

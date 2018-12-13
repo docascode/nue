@@ -11,7 +11,7 @@ namespace Nue.Core
 {
     public class Extractor
     {
-        public static void PreparePropertyBag(IEnumerable<PackageAtom> packages, string defaultTargetFramework)
+        public static void PreparePropertyBag(IEnumerable<PackageAtom> packages)
         {
             foreach (var package in packages)
             {
@@ -27,11 +27,7 @@ namespace Nue.Core
                 // Inject the TFM into the resolver if none was specified for the package.
                 if (package.CustomPropertyBag.TryGetValue("tfm", out string tfmVal))
                 {
-                    package.TFM = tfmVal;
-                }
-                else if (string.IsNullOrEmpty(package.TFM))
-                {
-                    package.TFM = defaultTargetFramework;
+                    package.CustomProperties.TFM = tfmVal;
                 }
 
                 // Determines whether a package is a PowerShell package - there is some custom logic that we need
@@ -65,13 +61,13 @@ namespace Nue.Core
             }
         }
 
-        public static bool DownloadPackages(string packagePath, string outputPath, string targetFramework, KeyValuePair<string,string> credentials = new KeyValuePair<string,string>(), string feed = "", string nugetPath = "")
+        public static bool DownloadPackages(string packagePath, RunSettings runSettings)
         {
-            if (string.IsNullOrWhiteSpace(packagePath) || string.IsNullOrWhiteSpace(outputPath)) return false;
+            if (string.IsNullOrWhiteSpace(packagePath) || string.IsNullOrWhiteSpace(runSettings.OutputPath)) return false;
 
             var packages = GetPackagesFromFile(packagePath);
 
-            PreparePropertyBag(packages, targetFramework);
+            PreparePropertyBag(packages);
 
             foreach(var package in packages)
             {
@@ -79,19 +75,19 @@ namespace Nue.Core
                 IPackageResolver resolver = new Resolver();
 
                 var currentOutputPrefix = Guid.NewGuid().ToString().Substring(0,5);
-                var isSuccess = resolver.CopyBinarySet(package, outputPath, credentials, feed, nugetPath, currentOutputPrefix);
+                var isSuccess = resolver.CopyBinarySet(package, runSettings, currentOutputPrefix);
 
                 try
                 {
-                    Console.WriteLine($"[info] Deleting {Path.Combine(outputPath, "_pacman" + currentOutputPrefix)}");
-                    Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman" + currentOutputPrefix));
+                    Console.WriteLine($"[info] Deleting {Path.Combine(runSettings.OutputPath, "_pacman" + currentOutputPrefix)}");
+                    Helpers.DeleteDirectory(Path.Combine(runSettings.OutputPath, "_pacman" + currentOutputPrefix));
                 }
                 catch
                 {
                     Console.WriteLine("[error] Errored out the first time we tried to delete the folder. Retrying...");
 
                     Thread.Sleep(2000);
-                    Helpers.DeleteDirectory(Path.Combine(outputPath, "_pacman" + currentOutputPrefix));
+                    Helpers.DeleteDirectory(Path.Combine(runSettings.OutputPath, "_pacman" + currentOutputPrefix));
                 }
             }
 

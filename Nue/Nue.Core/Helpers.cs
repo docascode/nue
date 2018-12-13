@@ -109,28 +109,26 @@ namespace Nue.Core
             return true;
         }
 
-        public static string BuildCommandString(PackageAtom package, string rootPath, string configPath, string defaultPackageSource)
+        public static string BuildCommandString(PackageAtom package, string rootPath, string configPath, RunSettings runSettings)
         {
-            defaultPackageSource = defaultPackageSource?.Trim('"');
-
             var baseline = $@"install {package.Name} -OutputDirectory ""{rootPath.Trim('"')}"" -Verbosity Quiet -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile ""{configPath.Trim('"')}""";
 
             if (!string.IsNullOrWhiteSpace(package.CustomProperties.TFM))
             {
                 baseline += $" -Framework {package.CustomProperties.TFM}";
             }
-            else if (!string.IsNullOrWhiteSpace(package.TFM))
+            else if (!string.IsNullOrEmpty(runSettings.TFM))
             {
-                baseline += $" -Framework {package.TFM}";
+                baseline += $" -Framework {runSettings.TFM}";
             }
 
             if (!string.IsNullOrWhiteSpace(package.CustomProperties.CustomFeed))
             {
                 baseline += $" -Source {package.CustomProperties.CustomFeed}";
             }
-            else if (!string.IsNullOrWhiteSpace(defaultPackageSource))
+            else if (!string.IsNullOrEmpty(runSettings.Feed))
             {
-                baseline += $" -Source {defaultPackageSource}";
+                baseline += $" -Source {runSettings.Feed}";
             }
 
             if (package.VersionOption == VersionOption.Custom)
