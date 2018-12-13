@@ -75,7 +75,7 @@ namespace Nue.StandardResolver
 
                 // Among other things, we need to make sure that the package was not already extracted for 
                 // another team.
-                if (Directory.Exists(pacManPackageLibPath))
+                if (Directory.Exists(pacManPackageLibPath) && !Directory.Exists(packageContainerPath))
                 {
                     Directory.CreateDirectory(packageContainerPath);
 
