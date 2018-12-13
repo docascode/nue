@@ -16,13 +16,13 @@ namespace Nue.Models
         [Option('n', "nugetpath", Required = false, HelpText = "Path to folder containing NuGet.exe.")]
         public string NuGetPath { get; set; }
 
-        [Option('P', "password", Required = false, HelpText = "Password for the feed to be used.", Default = "")]
+        [Option('P', "password", Required = false, HelpText = "Password for the feed to be used.")]
         public string Password { get; set; }
 
-        [Option('U', "username", Required = false, HelpText = "Username for the feed to be used.", Default = "")]
+        [Option('U', "username", Required = false, HelpText = "Username for the feed to be used.")]
         public string Username { get; set; }
 
-        [Option('F', "feed", Required = false, HelpText = "Custom feed to use with to download NuGet packages.", Default = "")]
+        [Option('F', "feed", Required = false, HelpText = "Custom feed to use with to download NuGet packages.")]
         public string Feed { get; set; }
     }
 }
