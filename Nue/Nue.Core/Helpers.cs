@@ -111,25 +111,35 @@ namespace Nue.Core
 
         public static string BuildCommandString(PackageAtom package, string rootPath, string configPath, string defaultPackageSource)
         {
-            var baseline = $@"install {package.Name} -Source ""{defaultPackageSource.Trim('"')}"" -OutputDirectory ""{rootPath.Trim('"')}"" -Verbosity Quiet -DisableParallelProcessing -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile ""{configPath.Trim('"')}""";
+            defaultPackageSource = defaultPackageSource?.Trim('"');
 
-            if (!string.IsNullOrWhiteSpace(package.CustomPropertyBag["tfm"]))
+            var baseline = $@"install {package.Name} -OutputDirectory ""{rootPath.Trim('"')}"" -Verbosity Quiet -FallbackSource https://api.nuget.org/v3/index.json -ConfigFile ""{configPath.Trim('"')}""";
+
+            if (!string.IsNullOrWhiteSpace(package.CustomProperties.TFM))
             {
-                baseline += $" -Framework {package.CustomPropertyBag["tfm"]}";
+                baseline += $" -Framework {package.CustomProperties.TFM}";
+            }
+            else if (!string.IsNullOrWhiteSpace(package.TFM))
+            {
+                baseline += $" -Framework {package.TFM}";
             }
 
-            if (!string.Equals(package.Version, "Unknown", StringComparison.CurrentCultureIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(package.CustomProperties.CustomFeed))
             {
-                baseline += $" -Version {package.Version}";
+                baseline += $" -Source {package.CustomProperties.CustomFeed}";
+            }
+            else if (!string.IsNullOrWhiteSpace(defaultPackageSource))
+            {
+                baseline += $" -Source {defaultPackageSource}";
             }
 
-            if (package.CustomPropertyBag.ContainsKey("isPrerelease"))
+            if (package.VersionOption == VersionOption.Custom)
             {
-                bool shouldIncludePrerelease = Convert.ToBoolean(package.CustomPropertyBag["isPrerelease"]);
-                if (shouldIncludePrerelease)
-                {
-                    baseline += " -PreRelease";
-                }
+                baseline += $" -Version {package.CustomVersion}";
+            }
+            else if (package.VersionOption == VersionOption.Prerelease)
+            {
+                baseline += " -PreRelease";
             }
 
             return baseline;

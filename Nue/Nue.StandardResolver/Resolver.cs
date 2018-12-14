@@ -11,23 +11,10 @@ namespace Nue.StandardResolver
     public class Resolver : IPackageResolver
     {
         public const string NUGET_DEFAULT_FEED = "https://api.nuget.org/v3/index.json";
-        public IDictionary<string, string> Parameters { get; set; }
 
         public bool CopyBinarySet(PackageAtom package, string outputPath, KeyValuePair<string, string> credentials = new KeyValuePair<string, string>(), string feed = "", string nugetPath = "", string outputPrefix = "")
         {
-            string defaultPackageSource = NUGET_DEFAULT_FEED;
-            if (!string.IsNullOrWhiteSpace(feed))
-            {
-                defaultPackageSource = feed;
-            }
-
-            // Check if we have a requirement for a custom package source
-            if (package.CustomPropertyBag.ContainsKey("customSource"))
-            {
-                defaultPackageSource = package.CustomPropertyBag["customSource"];
-            }
-
-            Parameters = new Dictionary<string, string>(package.CustomPropertyBag);
+            string defaultPackageSource = package.CustomProperties.CustomFeed ?? feed ?? NUGET_DEFAULT_FEED;
 
             var rootPath = outputPath + "\\_pacman" + outputPrefix;
 
@@ -57,9 +44,9 @@ namespace Nue.StandardResolver
             else
             {
                 var packageFqn = package.Name;
-                if (!string.Equals(package.Version, "Unknown", StringComparison.CurrentCultureIgnoreCase))
+                if (package.VersionOption == VersionOption.Custom)
                 {
-                    packageFqn += "." + package.Version;
+                    packageFqn += "." + package.CustomVersion;
                 }
 
                 var pacManPackagePath = Path.Combine(rootPath, packageFqn);
@@ -74,17 +61,18 @@ namespace Nue.StandardResolver
                 {
                     pacManPackageLibPath = pacManPackagePath;
                 }
-                else if (package.CustomPropertyBag.ContainsKey("libpath") && !string.IsNullOrWhiteSpace(package.CustomPropertyBag["libpath"]))
+                else if (!string.IsNullOrWhiteSpace(package.CustomProperties?.CustomLibraryFolder))
                 {
-                    pacManPackageLibPath = Path.Combine(pacManPackagePath, Convert.ToString(package.CustomPropertyBag["libpath"]));
+                    pacManPackageLibPath = Path.Combine(pacManPackagePath, package.CustomProperties.CustomLibraryFolder);
                 }
                 else
                 {
                     pacManPackageLibPath = pacManPackagePath + "\\lib";
                 }
 
-                var packageContainerPath = Path.Combine(outputPath, package.Moniker);
-
+                var packageFolderId = string.IsNullOrEmpty(package.Moniker) ? package.Name : package.Moniker;
+                var packageContainerPath = Path.Combine(outputPath, packageFolderId);
+                var packageDependencyContainerPath = Path.Combine(outputPath, "dependencies", packageFolderId);
 
                 // Among other things, we need to make sure that the package was not already extracted for 
                 // another team.
@@ -144,7 +132,7 @@ namespace Nue.StandardResolver
 
                         // Directory exists, so we should proceed to package extraction.
                         var directories = Directory.GetDirectories(pacManPackageLibPath);
-                        var closestDirectory = Helpers.GetBestLibMatch(Parameters["tfm"], directories);
+                        var closestDirectory = Helpers.GetBestLibMatch(package.TFM, directories);
 
                         try
                         {
@@ -159,9 +147,9 @@ namespace Nue.StandardResolver
 
                         // It might be possible that the author specified an additional dependency folder.
                         // If that is the case, we are just going to add it to the existing set of folders.
-                        if (package.CustomPropertyBag.ContainsKey("customDependencyFolder"))
+                        if (!string.IsNullOrEmpty(package.CustomProperties.CustomDependencyFolder))
                         {
-                            dependencyFolders.Add(Path.Combine(pacManPackagePath, package.CustomPropertyBag["customDependencyFolder"]));
+                            dependencyFolders.Add(Path.Combine(pacManPackagePath, package.CustomProperties.CustomDependencyFolder));
                         }
 
                         string informationalPackageString = $"[info] Currently available library sets for {package.Name}\n";
@@ -221,7 +209,7 @@ namespace Nue.StandardResolver
                                         }
 
                                         var dependencyLibFolders = Directory.GetDirectories(Path.Combine(dependency, "lib"));
-                                        var closestDepLibFolder = Helpers.GetBestLibMatch(Parameters["tfm"], dependencyLibFolders);
+                                        var closestDepLibFolder = Helpers.GetBestLibMatch(package.TFM, dependencyLibFolders);
 
                                         if (string.IsNullOrWhiteSpace(closestDepLibFolder))
                                         {
@@ -241,17 +229,15 @@ namespace Nue.StandardResolver
 
                                         if (dFrameworkIsAvailable)
                                         {
-                                            Directory.CreateDirectory(Path.Combine(outputPath, "dependencies",
-                                                package.Moniker));
+                                            Directory.CreateDirectory(packageDependencyContainerPath);
 
                                             var dependencyBinaries = Directory.EnumerateFiles(closestDepLibFolder, "*.*", SearchOption.TopDirectoryOnly)
                                             .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
 
                                             foreach (var binary in dependencyBinaries)
                                                 File.Copy(binary,
-                                                    Path.Combine(outputPath, "dependencies", package.Moniker,
-                                                        Path.GetFileName(binary)), true);
-
+                                                    Path.Combine(packageDependencyContainerPath, Path.GetFileName(binary)),
+                                                    true);
                                         }
                                     }
                                     else
@@ -262,8 +248,8 @@ namespace Nue.StandardResolver
 
                                         foreach (var binary in dependencyBinaries)
                                             File.Copy(binary,
-                                                Path.Combine(outputPath, "dependencies", package.Moniker,
-                                                    Path.GetFileName(binary)), true);
+                                                Path.Combine(packageDependencyContainerPath, Path.GetFileName(binary)),
+                                                true);
                                     }
                                 }
                             }
