@@ -18,6 +18,9 @@ namespace Nue.Core
         [JsonProperty("customVersion")]
         public string CustomVersion { get; set; }
 
+        [JsonProperty("isPrerelease")]
+        public bool IsPrerelease { get; set; }
+
         public bool IsPowerShellPackage { get; set; }
 
         [JsonProperty("customProperties")]
@@ -27,7 +30,12 @@ namespace Nue.Core
 
         public string GetFullName()
         {
-            return $"{Name} [Version {(VersionOption == VersionOption.Custom ? CustomVersion : VersionOption.ToString())}]";
+            var versionStr = VersionOption == VersionOption.Custom ? CustomVersion : VersionOption.ToString();
+            if (IsPrerelease)
+            {
+                versionStr += " -Prerelease";
+            }
+            return $"{Name} [Version {versionStr}]";
         }
     }
 
@@ -51,8 +59,7 @@ namespace Nue.Core
 
     public enum VersionOption
     {
-        Release,
-        Prerelease,
+        Latest,
         Custom
     }
 }

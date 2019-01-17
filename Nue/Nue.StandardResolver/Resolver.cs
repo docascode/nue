@@ -31,9 +31,7 @@ namespace Nue.StandardResolver
 
             string commandString = Helpers.BuildCommandString(package, rootPath, configPath, runSettings);
             cmdsi.Arguments = commandString;
-            Console.WriteLine($"[info] nuget.exe {commandString}");
-
-            Console.WriteLine($"[info] nuget.exe {commandString}");
+            Console.WriteLine($"[info] {command} {commandString}");
 
             Process cmd = Process.Start(cmdsi);
             cmd.WaitForExit();
@@ -46,7 +44,7 @@ namespace Nue.StandardResolver
             else
             {
                 var packageFqn = package.Name;
-                if (package.VersionOption == VersionOption.Custom)
+                if (!string.IsNullOrEmpty(package.CustomVersion))
                 {
                     packageFqn += "." + package.CustomVersion;
                 }

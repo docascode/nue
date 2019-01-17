@@ -131,11 +131,11 @@ namespace Nue.Core
                 baseline += $" -Source {runSettings.Feed}";
             }
 
-            if (package.VersionOption == VersionOption.Custom)
+            if (!string.IsNullOrEmpty(package.CustomVersion))
             {
                 baseline += $" -Version {package.CustomVersion}";
             }
-            else if (package.VersionOption == VersionOption.Prerelease)
+            if (package.IsPrerelease)
             {
                 baseline += " -PreRelease";
             }
