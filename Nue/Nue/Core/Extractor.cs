@@ -37,11 +37,9 @@ namespace Nue.Core
                     package.IsPowerShellPackage = Convert.ToBoolean(psVal);
                 }
 
-                if (package.CustomPropertyBag.TryGetValue("isPrerelease", out string preReleaseVal)
-                    && Convert.ToBoolean(preReleaseVal)
-                    && package.VersionOption != VersionOption.Custom)
+                if (package.CustomPropertyBag.TryGetValue("isPrerelease", out string preReleaseVal))
                 {
-                    package.VersionOption = VersionOption.Prerelease;
+                    package.IsPrerelease = Convert.ToBoolean(preReleaseVal);
                 }
 
                 if (package.CustomPropertyBag.TryGetValue("libpath", out string libpathVal))
@@ -132,7 +130,7 @@ namespace Nue.Core
                         // There is no version specified.
                         pAtom.Moniker = fields[0];
                         pAtom.Name = fields[1];
-                        pAtom.VersionOption = VersionOption.Release;
+                        pAtom.VersionOption = VersionOption.Latest;
                     }
                     else if (fields.Length > 2)
                     {
