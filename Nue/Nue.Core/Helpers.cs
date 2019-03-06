@@ -145,7 +145,7 @@ namespace Nue.Core
 
         private static string GetWinningFolder(string[] folders, Regex regex)
         {
-            var folderAssociations = new Dictionary<string, double>();
+            var folderAssociations = new Dictionary<string, string>();
             foreach (var folder in folders)
             {
                 var exactFolderName = Path.GetFileName(folder);
@@ -155,11 +155,11 @@ namespace Nue.Core
 
                 if (!string.IsNullOrEmpty(folderVersion))
                 {
-                    folderAssociations.Add(folder, double.Parse(folderVersion));
+                    folderAssociations.Add(folder, folderVersion);
                 }
                 else
                 {
-                    folderAssociations.Add(folder, 0);
+                    folderAssociations.Add(folder, "0");
                 }
             }
 
