@@ -44,7 +44,7 @@ namespace Nue.StandardResolver
             else
             {
                 var packageFqn = package.Name;
-                if (!string.IsNullOrEmpty(package.CustomVersion))
+                if (package.CustomVersionDefined)
                 {
                     packageFqn += "." + package.CustomVersion;
                 }

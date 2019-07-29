@@ -18,6 +18,9 @@ namespace Nue.Core
         [JsonProperty("customVersion")]
         public string CustomVersion { get; set; }
 
+        [JsonIgnore]
+        public bool CustomVersionDefined { get => VersionOption == VersionOption.Custom && !string.IsNullOrEmpty(CustomVersion); }
+
         [JsonProperty("isPrerelease")]
         public bool IsPrerelease { get; set; }
 
