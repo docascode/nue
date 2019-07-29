@@ -131,7 +131,7 @@ namespace Nue.Core
                 baseline += $" -Source {runSettings.Feed}";
             }
 
-            if (!string.IsNullOrEmpty(package.CustomVersion))
+            if (package.CustomVersionDefined)
             {
                 baseline += $" -Version {package.CustomVersion}";
             }
