@@ -75,9 +75,9 @@ namespace Nue.Core
             return folder;
         }
 
-        public static bool CopyLibraryContent(string source, string destination, PackageAtom package)
+        public static bool CopyLibraryContent(string source, string destination, PackageAtom package, out List<string> binaries)
         {
-            var binaries = new List<string>();
+            binaries = new List<string>();
             var docFiles = new List<string>();
 
             try

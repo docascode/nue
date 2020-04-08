@@ -5,6 +5,7 @@ namespace Nue.Core
 {
     public interface IPackageResolver
     {
-        bool CopyBinarySet(PackageAtom package, RunSettings runSettings, string outputPrefix = "");
+        // will merge the current package information mapping into pkgInfoMap
+        bool CopyBinarySet(PackageAtom package, RunSettings runSettings, PackageInfomarionMapping pkgInfoMap,string outputPrefix = "");
     }
 }
