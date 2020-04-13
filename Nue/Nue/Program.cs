@@ -34,8 +34,8 @@ namespace Nue
                     moniker = options.Moniker;
                 }
                 var jsonString = JsonConvert.SerializeObject(pkgInfoMap);
-                Directory.CreateDirectory(Path.Combine(options.OutputPath, "package-information"));
-                File.WriteAllText(Path.Combine(options.OutputPath, "package-information", $"{moniker}.json"), jsonString);
+                Directory.CreateDirectory(Path.Combine(options.OutputPath, "PackageInformation"));
+                File.WriteAllText(Path.Combine(options.OutputPath, "PackageInformation", $"{moniker}.json"), jsonString);
 
                 Console.WriteLine("[info] Completed successfully: " + completed);
             });
