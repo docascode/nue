@@ -59,8 +59,10 @@ namespace Nue.Core
             }
         }
 
-        public static bool DownloadPackages(string packagePath, RunSettings runSettings)
+        public static bool DownloadPackages(string packagePath, RunSettings runSettings, out PackageInfomarionMapping pkgInfoMap)
         {
+            pkgInfoMap = new PackageInfomarionMapping();
+
             if (string.IsNullOrWhiteSpace(packagePath) || string.IsNullOrWhiteSpace(runSettings.OutputPath)) return false;
 
             var packages = GetPackagesFromFile(packagePath);
@@ -73,7 +75,7 @@ namespace Nue.Core
                 IPackageResolver resolver = new Resolver();
 
                 var currentOutputPrefix = Guid.NewGuid().ToString().Substring(0,5);
-                var isSuccess = resolver.CopyBinarySet(package, runSettings, currentOutputPrefix);
+                var isSuccess = resolver.CopyBinarySet(package, runSettings, pkgInfoMap, currentOutputPrefix);
 
                 try
                 {

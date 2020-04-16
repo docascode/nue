@@ -13,6 +13,7 @@ namespace Nue.StandardResolver
         public bool CopyBinarySet(
             PackageAtom package,
             RunSettings runSettings,
+            PackageInfomarionMapping pkgInfoMap,
             string outputPrefix = "")
         {
             var tfm = package.CustomProperties.TFM ?? runSettings.TFM;
@@ -54,6 +55,8 @@ namespace Nue.StandardResolver
                 string pacManPackageLibPath = "";
 
                 pacManPackagePath = (from c in Directory.GetDirectories(rootPath) where c.StartsWith(pacManPackagePath, StringComparison.InvariantCultureIgnoreCase) select c).FirstOrDefault();
+
+                var packageVersion = pacManPackagePath.Replace(Path.Combine(rootPath, package.Name + "."), "");
 
                 // In some cases, the lookup might be happening inside a custom path.
                 // For PowerShell, this should be done inside the root directory.
@@ -176,13 +179,31 @@ namespace Nue.StandardResolver
                         var frameworkIsAvailable = !string.IsNullOrWhiteSpace(closestDirectory);
 
                         bool capturedContent = false;
+                        List<string> binaries = null;
                         if (frameworkIsAvailable)
                         {
-                            capturedContent = Helpers.CopyLibraryContent(closestDirectory, packageContainerPath, package);
+                            capturedContent = Helpers.CopyLibraryContent(closestDirectory, packageContainerPath, package, out binaries);
                         }
                         else
                         {
-                            capturedContent = Helpers.CopyLibraryContent(pacManPackageLibPath, packageContainerPath, package);
+                            capturedContent = Helpers.CopyLibraryContent(pacManPackageLibPath, packageContainerPath, package, out binaries);
+                        }
+
+                        // record the assembly => package mapping
+                        var packageInfo = new PackageInfomarion()
+                        {
+                            Name = package.Name,
+                            Version = packageVersion,
+                            Feed = runSettings.Feed
+                        };
+                        if (!pkgInfoMap.ContainsKey(packageFolderId))
+                        {
+                            pkgInfoMap[packageFolderId] = new Dictionary<string, PackageInfomarion>();
+                        }
+                        foreach (var binary in binaries)
+                        {
+                            var assemblyName = Path.GetFileNameWithoutExtension(binary);
+                            pkgInfoMap[packageFolderId][assemblyName] = packageInfo;
                         }
 
                         // Only process dependencies if we actually captured binary content.

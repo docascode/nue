@@ -24,5 +24,8 @@ namespace Nue.Models
 
         [Option('F', "feed", Required = false, HelpText = "Custom feed to use with to download NuGet packages.")]
         public string Feed { get; set; }
+
+        [Option('m', "moniker", Required = false, HelpText = "Record all package information in a single moniker")]
+        public string Moniker { get; set; }
     }
 }
