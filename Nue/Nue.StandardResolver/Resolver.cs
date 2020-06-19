@@ -203,7 +203,17 @@ namespace Nue.StandardResolver
                         foreach (var binary in binaries)
                         {
                             var assemblyName = Path.GetFileNameWithoutExtension(binary);
+
+                            foreach (var item in pkgInfoMap)
+                            {
+                                if (item.Value.ContainsKey(assemblyName))
+                                {
+                                    Console.WriteLine($"[warning] assemblyName exists,packageFolderId:" +item.Key+ ",assemblyName:"+ assemblyName);
+                                }
+                            }
+
                             pkgInfoMap[packageFolderId][assemblyName] = packageInfo;
+
                         }
 
                         // Only process dependencies if we actually captured binary content.
