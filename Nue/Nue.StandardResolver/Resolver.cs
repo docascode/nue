@@ -208,7 +208,8 @@ namespace Nue.StandardResolver
                             {
                                 if (item.Value.ContainsKey(assemblyName))
                                 {
-                                    Console.WriteLine($"[warning] assemblyName exists,packageFolderId:" +item.Key+ ",assemblyName:"+ assemblyName);
+                                    var package_temp = pkgInfoMap[packageFolderId][assemblyName];
+                                    Console.WriteLine($"[warning] {assemblyName} already exists in the {package_temp.Version} version of named {package_temp.Name} package");
                                 }
                             }
 
