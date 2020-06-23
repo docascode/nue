@@ -14,7 +14,7 @@ namespace Nue.StandardResolver
             PackageAtom package,
             RunSettings runSettings,
             PackageInfomarionMapping pkgInfoMap,
-            PackageInformationOfDepAssemblyMapping pkgInfoMapOfdepAssembly,
+            AssemblyMappingPackageInformation assemblyPkgInfoMap,
             string outputPrefix = "")
         {
             var tfm = package.CustomProperties.TFM ?? runSettings.TFM;
@@ -203,9 +203,9 @@ namespace Nue.StandardResolver
                         }
                         foreach (var binary in binaries)
                         {
+                            AssemblyPackageInformationMap(binary, assemblyPkgInfoMap, packageInfo);
                             var assemblyName = Path.GetFileNameWithoutExtension(binary);
                             pkgInfoMap[packageFolderId][assemblyName] = packageInfo;
-
                         }
                             
                         // Only process dependencies if we actually captured binary content.
@@ -256,13 +256,9 @@ namespace Nue.StandardResolver
                                             .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
 
                                             foreach (var binary in dependencyBinaries)
-                                            {
-                                                DependencyAssemblyPackageInformationMap(binary, pkgInfoMapOfdepAssembly, packageInfo);
-
                                                 File.Copy(binary,
                                                     Path.Combine(packageDependencyContainerPath, Path.GetFileName(binary)),
                                                     true);
-                                            }
                                         }
                                     }
                                     else
@@ -272,13 +268,9 @@ namespace Nue.StandardResolver
                                             .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
 
                                         foreach (var binary in dependencyBinaries)
-                                        {
-                                            DependencyAssemblyPackageInformationMap(binary, pkgInfoMapOfdepAssembly, packageInfo);
-
                                             File.Copy(binary,
                                                 Path.Combine(packageDependencyContainerPath, Path.GetFileName(binary)),
                                                 true);
-                                        }
                                     }
                                 }
                             }
@@ -298,15 +290,15 @@ namespace Nue.StandardResolver
             }
         }
 
-        private void DependencyAssemblyPackageInformationMap(string binary, PackageInformationOfDepAssemblyMapping pkgInfoMapOfdepAssembly, PackageInfomarion packageInfo)
+        private void AssemblyPackageInformationMap(string binary, AssemblyMappingPackageInformation assemblyPkgInfoMap, PackageInfomarion packageInfo)
         {
             var assemblyName = Path.GetFileName(binary);
-            if (!pkgInfoMapOfdepAssembly.ContainsKey(assemblyName))
+            if (!assemblyPkgInfoMap.ContainsKey(assemblyName))
             {
-                pkgInfoMapOfdepAssembly[assemblyName] = new HashSet<PackageInfomarion>();
+                assemblyPkgInfoMap[assemblyName] = new List<PackageInfomarion>();
             }
 
-            var dependencyPackages = pkgInfoMapOfdepAssembly[assemblyName];
+            var dependencyPackages = assemblyPkgInfoMap[assemblyName];
             dependencyPackages.Add(packageInfo);
 
             if (dependencyPackages.Count > 1)

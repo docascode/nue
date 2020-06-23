@@ -69,7 +69,7 @@ namespace Nue.Core
 
             PreparePropertyBag(packages);
 
-            var pkgInfoMapOfdepAssembly = new PackageInformationOfDepAssemblyMapping();
+            var assemblyPkgInfoMap = new AssemblyMappingPackageInformation();
 
             foreach (var package in packages)
             {
@@ -77,7 +77,7 @@ namespace Nue.Core
                 IPackageResolver resolver = new Resolver();
 
                 var currentOutputPrefix = Guid.NewGuid().ToString().Substring(0,5);
-                var isSuccess = resolver.CopyBinarySet(package, runSettings, pkgInfoMap, pkgInfoMapOfdepAssembly, currentOutputPrefix);
+                var isSuccess = resolver.CopyBinarySet(package, runSettings, pkgInfoMap, assemblyPkgInfoMap, currentOutputPrefix);
 
                 try
                 {

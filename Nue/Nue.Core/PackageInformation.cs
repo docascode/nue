@@ -36,7 +36,7 @@ namespace Nue.Core
         }
     }
 
-    public class PackageInformationOfDepAssemblyMapping : Dictionary<string, HashSet<PackageInfomarion>>
+    public class AssemblyMappingPackageInformation : Dictionary<string, List<PackageInfomarion>>
     { 
     
     }
