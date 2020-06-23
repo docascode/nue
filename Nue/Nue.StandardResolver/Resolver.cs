@@ -14,6 +14,7 @@ namespace Nue.StandardResolver
             PackageAtom package,
             RunSettings runSettings,
             PackageInfomarionMapping pkgInfoMap,
+            AssemblyMappingPackageInformation assemblyPkgInfoMap,
             string outputPrefix = "")
         {
             var tfm = package.CustomProperties.TFM ?? runSettings.TFM;
@@ -202,10 +203,11 @@ namespace Nue.StandardResolver
                         }
                         foreach (var binary in binaries)
                         {
+                            AssemblyPackageInformationMap(binary, assemblyPkgInfoMap, packageInfo);
                             var assemblyName = Path.GetFileNameWithoutExtension(binary);
                             pkgInfoMap[packageFolderId][assemblyName] = packageInfo;
                         }
-
+                            
                         // Only process dependencies if we actually captured binary content.
                         if (capturedContent)
                         {
@@ -286,6 +288,30 @@ namespace Nue.StandardResolver
                 }
                 return true;
             }
+        }
+
+        private void AssemblyPackageInformationMap(string binary, AssemblyMappingPackageInformation assemblyPkgInfoMap, PackageInfomarion packageInfo)
+        {
+            var assemblyName = Path.GetFileName(binary);
+            if (!assemblyPkgInfoMap.ContainsKey(assemblyName))
+            {
+                assemblyPkgInfoMap[assemblyName] = new List<PackageInfomarion>();
+            }
+
+            var dependencyPackages = assemblyPkgInfoMap[assemblyName];
+            dependencyPackages.Add(packageInfo);
+
+            if (dependencyPackages.Count > 1)
+            {
+                string informationalPackageStringOfDependency = $"[warning] {assemblyName} already exists in the following packages\n";
+                foreach (var item in dependencyPackages)
+                {
+                    informationalPackageStringOfDependency += "   |___" + item.Name + " " + item.Version + "\n";
+                }
+
+                Console.WriteLine(informationalPackageStringOfDependency);
+            }
+
         }
     }
 }

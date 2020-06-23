@@ -69,13 +69,15 @@ namespace Nue.Core
 
             PreparePropertyBag(packages);
 
-            foreach(var package in packages)
+            var assemblyPkgInfoMap = new AssemblyMappingPackageInformation();
+
+            foreach (var package in packages)
             {
                 // Package resolver that will be used to get the full path to binaries.
                 IPackageResolver resolver = new Resolver();
 
                 var currentOutputPrefix = Guid.NewGuid().ToString().Substring(0,5);
-                var isSuccess = resolver.CopyBinarySet(package, runSettings, pkgInfoMap, currentOutputPrefix);
+                var isSuccess = resolver.CopyBinarySet(package, runSettings, pkgInfoMap, assemblyPkgInfoMap, currentOutputPrefix);
 
                 try
                 {

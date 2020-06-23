@@ -35,4 +35,9 @@ namespace Nue.Core
             return result;
         }
     }
+
+    public class AssemblyMappingPackageInformation : Dictionary<string, List<PackageInfomarion>>
+    { 
+    
+    }
 }
