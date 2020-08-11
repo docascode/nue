@@ -113,11 +113,20 @@ namespace Nue.StandardResolver
                                 //File.Copy(Path.Combine(pacManPackageLibPath, dll + "-help.xml"), Path.Combine(packageContainerPath, Path.GetFileNameWithoutExtension(dll) + ".xml"), true);
                             }
 
-                            var dependencies = from c in Directory.GetFiles(pacManPackageLibPath)
+                            var dependencies = (from c in Directory.GetFiles(pacManPackageLibPath)
                                                where !dllFiles.Contains(Path.GetFileName(c).ToLower()) && Path.GetFileName(c).EndsWith(".dll")
-                                               select c;
-
-                            if (dependencies.Any())
+                                               select c).ToList();
+                            if ((tfm.StartsWith("net46") || tfm.StartsWith("net47") || tfm.StartsWith("net48"))
+                                && Directory.Exists(Path.Combine(pacManPackageLibPath, "PreloadAssemblies")))
+                            {
+                                dependencies.AddRange(Directory.GetFiles(Path.Combine(pacManPackageLibPath, "PreloadAssemblies")));
+                            }
+                            if (tfm.StartsWith("netcoreapp")
+                                && Directory.Exists(Path.Combine(pacManPackageLibPath, "NetCoreAssemblies")))
+                            {
+                                dependencies.AddRange(Directory.GetFiles(Path.Combine(pacManPackageLibPath, "NetCoreAssemblies")));
+                            }
+                            if (dependencies.Count > 0)
                             {
                                 Directory.CreateDirectory(packageDependencyContainerPath);
 
