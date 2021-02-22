@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-
+using System.Text;
 namespace Nue.StandardResolver
 {
     public class Resolver : IPackageResolver
@@ -26,7 +26,9 @@ namespace Nue.StandardResolver
 
             ProcessStartInfo cmdsi = new ProcessStartInfo(command)
             {
-                UseShellExecute = false
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
             };
 
             var configPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "custom.nuget.config");
@@ -34,13 +36,51 @@ namespace Nue.StandardResolver
             string commandString = Helpers.BuildCommandString(package, rootPath, configPath, runSettings);
             cmdsi.Arguments = commandString;
             Console.WriteLine($"[info] {command} {commandString}");
-
+            StringBuilder sb = new StringBuilder();
             Process cmd = Process.Start(cmdsi);
-            cmd.WaitForExit();
 
+            cmd.OutputDataReceived += (object sender, DataReceivedEventArgs e) =>
+            {
+                if (!string.IsNullOrWhiteSpace(e.Data))
+                {
+                    sb.AppendLine(e.Data);
+                }
+            };
+            cmd.ErrorDataReceived += (object sender, DataReceivedEventArgs e) =>
+            {
+                if (!string.IsNullOrWhiteSpace(e.Data))
+                {
+                    sb.AppendLine(e.Data);
+                }
+            };
+
+            cmd.BeginOutputReadLine();
+            cmd.BeginErrorReadLine();
+
+            cmd.WaitForExit();
+            var isContinue = true;
             if (cmd.ExitCode != 0)
             {
-                Console.WriteLine("[error] There was an error in NuGet installation. Package attempted: " + package.Name);
+                // The package ( https://www.nuget.org/packages/Microsoft.AspNetCore.App.Ref/3.0.0) is marked as DotnetPlatform and therefore cannot be installed directly by nuget.exe. One possible solution is to directly download the .nupkg file and extra dlls from it.
+                // Task377921:https://ceapex.visualstudio.com/Engineering/_workitems/edit/377921
+                var msg = sb.ToString();
+                if (msg.Contains("package type 'DotnetPlatform'"))
+                {
+                    package.IsDotnetPlatform = true;
+                    Console.WriteLine("[info] The package is marked as DotnetPlatform and therefore cannot be installed directly by nuget.exe. Package attempted: " + package.Name);
+                    var packageEngine = new PackageDownloder(rootPath, package.Name, package.CustomVersion, true);
+                    packageEngine.DownloadPackage();
+                    packageEngine.Unzip(); 
+                }
+                else
+                {
+                    Console.WriteLine("[error] There was an error in NuGet installation. Package attempted: " + package.Name);
+                    isContinue = false;
+                }
+            }
+
+            if (!isContinue)
+            {
                 return false;
             }
             else
@@ -68,6 +108,11 @@ namespace Nue.StandardResolver
                 else if (!string.IsNullOrWhiteSpace(package.CustomProperties?.CustomLibraryFolder))
                 {
                     pacManPackageLibPath = Path.Combine(pacManPackagePath, package.CustomProperties.CustomLibraryFolder);
+                }
+                else if (package.IsDotnetPlatform)
+                {
+                    packageVersion = pacManPackagePath.Replace(Path.Combine(rootPath, package.Name.ToLowerInvariant() + "."), "");
+                    pacManPackageLibPath = pacManPackagePath + "\\ref";
                 }
                 else
                 {
@@ -114,8 +159,8 @@ namespace Nue.StandardResolver
                             }
 
                             var dependencies = (from c in Directory.GetFiles(pacManPackageLibPath)
-                                               where !dllFiles.Contains(Path.GetFileName(c).ToLower()) && Path.GetFileName(c).EndsWith(".dll")
-                                               select c).ToList();
+                                                where !dllFiles.Contains(Path.GetFileName(c).ToLower()) && Path.GetFileName(c).EndsWith(".dll")
+                                                select c).ToList();
                             if ((tfm.StartsWith("net46") || tfm.StartsWith("net47") || tfm.StartsWith("net48"))
                                 && Directory.Exists(Path.Combine(pacManPackageLibPath, "PreloadAssemblies")))
                             {
@@ -136,6 +181,71 @@ namespace Nue.StandardResolver
                                     File.Copy(dependency, Path.Combine(packageDependencyContainerPath, Path.GetFileName(dependency)), true);
                                 }
                             }
+                        }
+                    }
+                    else if (package.IsDotnetPlatform)
+                    {
+                        Console.WriteLine($"[info] Treating {package.Name} as a DotnetPlatform package.");
+                        var allDllFiles = new List<string>();
+                        var directories = Directory.GetDirectories(pacManPackageLibPath);
+                        foreach (var directory in directories)
+                        {
+                            var dllFiles = new List<string>();
+                            var helpXmlFiles = from c in Directory.GetFiles(directory)
+                                               where Path.GetFileName(c).ToLower().EndsWith(".xml")
+                                               select c;
+
+                            foreach (var helpXmlFile in helpXmlFiles)
+                            {
+                                var workingDll = Path.GetFileName(helpXmlFile).ToLower().Replace(".xml", ".dll");
+                                if (File.Exists(Path.Combine(directory, workingDll)))
+                                {
+                                    dllFiles.Add(workingDll);
+                                }
+                            }
+                            
+                            if (dllFiles.Any())
+                            {
+                                foreach (var dll in dllFiles)
+                                {
+                                    File.Copy(Path.Combine(directory, dll), Path.Combine(packageContainerPath, dll), true);
+                                    File.Copy(Path.Combine(directory, Path.GetFileNameWithoutExtension(dll) + ".xml"), Path.Combine(packageContainerPath, Path.GetFileNameWithoutExtension(dll) + ".xml"), true);
+                                }
+
+                                allDllFiles.AddRange(dllFiles);
+
+                                var dependencies = (from c in Directory.GetFiles(directory)
+                                                    where !dllFiles.Contains(Path.GetFileName(c).ToLower()) && Path.GetFileName(c).EndsWith(".dll")
+                                                    select c).ToList();
+
+                                if (dependencies.Count > 0)
+                                {
+                                    Directory.CreateDirectory(packageDependencyContainerPath);
+
+                                    foreach (var dependency in dependencies)
+                                    {
+                                        File.Copy(dependency, Path.Combine(packageDependencyContainerPath, Path.GetFileName(dependency)), true);
+                                    }
+                                }
+                            }
+                        }
+
+                        // record the assembly => package mapping
+                        var packageInfo = new PackageInfomarion()
+                        {
+                            Name = package.Name,
+                            Version = packageVersion,
+                           // Feed = runSettings.Feed
+                        };
+                        if (!pkgInfoMap.ContainsKey(packageFolderId))
+                        {
+                            pkgInfoMap[packageFolderId] = new Dictionary<string, PackageInfomarion>();
+                        }
+                        foreach (var binary in allDllFiles)
+                        {
+                            AssemblyPackageInformationMap(binary, assemblyPkgInfoMap, packageInfo);
+                            var assemblyName = Path.GetFileNameWithoutExtension(binary);
+                            pkgInfoMap[packageFolderId][assemblyName] = packageInfo;
                         }
                     }
                     else
@@ -216,7 +326,7 @@ namespace Nue.StandardResolver
                             var assemblyName = Path.GetFileNameWithoutExtension(binary);
                             pkgInfoMap[packageFolderId][assemblyName] = packageInfo;
                         }
-                            
+
                         // Only process dependencies if we actually captured binary content.
                         if (capturedContent)
                         {

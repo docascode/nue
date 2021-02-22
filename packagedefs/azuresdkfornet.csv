@@ -1,7 +1,8 @@
+uwp-aspnetcore-app-ref,Microsoft.AspNetCore.App.Ref,3.0.0
 uwp-toolkit,[altDep=netstandard1.4|netstandard1.6]Microsoft.Toolkit.Uwp,2.0.0
+uwp-toolkit-notif,Microsoft.Toolkit.Uwp.Notifications
 uwp-toolkit-ui,Microsoft.Toolkit.Uwp.UI,2.0.0
 uwp-toolkit-ui-animations,Microsoft.Toolkit.Uwp.UI.Animations,2.0.0
 uwp-toolkit-ui-controls,Microsoft.Toolkit.Uwp.UI.Controls,2.0.0
-uwp-toolkit-notif,Microsoft.Toolkit.Uwp.Notifications,2.0.0
 uwp-toolkit-notif-js,Microsoft.Toolkit.Uwp.Notifications.JavaScript,2.0.0
 uwp-toolkit-devtools,Microsoft.Toolkit.Uwp.DeveloperTools,2.0.0

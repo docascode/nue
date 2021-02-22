@@ -26,6 +26,8 @@ namespace Nue.Core
 
         public bool IsPowerShellPackage { get; set; }
 
+        public bool IsDotnetPlatform { get; set; }
+
         [JsonProperty("customProperties")]
         public PackageAdditionalProperties CustomProperties { get; set; }
 
