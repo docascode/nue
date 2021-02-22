@@ -235,7 +235,7 @@ namespace Nue.StandardResolver
                         {
                             Name = package.Name,
                             Version = packageVersion,
-                           // Feed = runSettings.Feed
+                            Feed = runSettings.Feed
                         };
                         if (!pkgInfoMap.ContainsKey(packageFolderId))
                         {
