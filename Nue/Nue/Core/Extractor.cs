@@ -56,6 +56,15 @@ namespace Nue.Core
                 {
                     package.CustomProperties.CustomFeed = feedVal;
                 }
+
+                if (package.CustomPropertyBag.TryGetValue("depDll", out string depDll))
+                {
+                    if (!string.IsNullOrEmpty(depDll))
+                    {
+                        var excludedDlls = depDll.Split('|');
+                        package.CustomProperties.ExcludedDlls = excludedDlls;
+                    }
+                }
             }
         }
 

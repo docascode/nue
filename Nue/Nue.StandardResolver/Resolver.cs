@@ -183,71 +183,6 @@ namespace Nue.StandardResolver
                             }
                         }
                     }
-                    else if (package.IsDotnetPlatform)
-                    {
-                        Console.WriteLine($"[info] Treating {package.Name} as a DotnetPlatform package.");
-                        var allDllFiles = new List<string>();
-                        var directories = Directory.GetDirectories(pacManPackageLibPath);
-                        foreach (var directory in directories)
-                        {
-                            var dllFiles = new List<string>();
-                            var helpXmlFiles = from c in Directory.GetFiles(directory)
-                                               where Path.GetFileName(c).ToLower().EndsWith(".xml")
-                                               select c;
-
-                            foreach (var helpXmlFile in helpXmlFiles)
-                            {
-                                var workingDll = Path.GetFileName(helpXmlFile).ToLower().Replace(".xml", ".dll");
-                                if (File.Exists(Path.Combine(directory, workingDll)))
-                                {
-                                    dllFiles.Add(workingDll);
-                                }
-                            }
-                            
-                            if (dllFiles.Any())
-                            {
-                                foreach (var dll in dllFiles)
-                                {
-                                    File.Copy(Path.Combine(directory, dll), Path.Combine(packageContainerPath, dll), true);
-                                    File.Copy(Path.Combine(directory, Path.GetFileNameWithoutExtension(dll) + ".xml"), Path.Combine(packageContainerPath, Path.GetFileNameWithoutExtension(dll) + ".xml"), true);
-                                }
-
-                                allDllFiles.AddRange(dllFiles);
-
-                                var dependencies = (from c in Directory.GetFiles(directory)
-                                                    where !dllFiles.Contains(Path.GetFileName(c).ToLower()) && Path.GetFileName(c).EndsWith(".dll")
-                                                    select c).ToList();
-
-                                if (dependencies.Count > 0)
-                                {
-                                    Directory.CreateDirectory(packageDependencyContainerPath);
-
-                                    foreach (var dependency in dependencies)
-                                    {
-                                        File.Copy(dependency, Path.Combine(packageDependencyContainerPath, Path.GetFileName(dependency)), true);
-                                    }
-                                }
-                            }
-                        }
-
-                        // record the assembly => package mapping
-                        var packageInfo = new PackageInfomarion()
-                        {
-                            Name = package.Name,
-                            Version = packageVersion,
-                            Feed = runSettings.Feed
-                        };
-                        if (!pkgInfoMap.ContainsKey(packageFolderId))
-                        {
-                            pkgInfoMap[packageFolderId] = new Dictionary<string, PackageInfomarion>();
-                        }
-                        foreach (var binary in allDllFiles)
-                        {
-                            AssemblyPackageInformationMap(binary, assemblyPkgInfoMap, packageInfo);
-                            var assemblyName = Path.GetFileNameWithoutExtension(binary);
-                            pkgInfoMap[packageFolderId][assemblyName] = packageInfo;
-                        }
-                    }
                     else
                     {
                         var dependencyFolders = new List<string>();
@@ -330,6 +265,25 @@ namespace Nue.StandardResolver
                         // Only process dependencies if we actually captured binary content.
                         if (capturedContent)
                         {
+                            if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Length != 0)
+                            {
+                                var excludedDllDirectory = pacManPackageLibPath;
+                                if (frameworkIsAvailable)
+                                {
+                                    excludedDllDirectory = closestDirectory;
+                                }
+
+                                if (!Directory.Exists(packageDependencyContainerPath))
+                                {
+                                    Directory.CreateDirectory(packageDependencyContainerPath);
+                                }
+
+                                foreach (var binary in package.CustomProperties.ExcludedDlls)
+                                    File.Copy(Path.Combine(excludedDllDirectory, Path.GetFileName(binary+".dll")),
+                                        Path.Combine(packageDependencyContainerPath, Path.GetFileName(binary + ".dll")),
+                                        true);
+                            }
+
                             if (dependencyFolders.Any())
                             {
                                 foreach (var dependency in dependencyFolders)
@@ -369,7 +323,10 @@ namespace Nue.StandardResolver
 
                                         if (dFrameworkIsAvailable)
                                         {
-                                            Directory.CreateDirectory(packageDependencyContainerPath);
+                                            if (!Directory.Exists(packageDependencyContainerPath))
+                                            {
+                                                Directory.CreateDirectory(packageDependencyContainerPath);
+                                            }
 
                                             var dependencyBinaries = Directory.EnumerateFiles(closestDepLibFolder, "*.*", SearchOption.TopDirectoryOnly)
                                             .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd"));
@@ -393,7 +350,7 @@ namespace Nue.StandardResolver
                                     }
                                 }
                             }
-                            else
+                            else if(package.CustomProperties.ExcludedDlls == null || package.CustomProperties.ExcludedDlls.Length == 0)
                             {
                                 Console.WriteLine($"[warning] No dependencies captured for {package.Name}");
                             }

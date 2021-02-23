@@ -84,6 +84,10 @@ namespace Nue.Core
             {
                 binaries = Directory.GetFiles(source, "*.*", SearchOption.TopDirectoryOnly)
                                 .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).ToList();
+                if (package.CustomProperties.ExcludedDlls != null)
+                {
+                    binaries = binaries.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => b.EndsWith(d + ".dll"))).ToList();
+                }
             }
             catch
             {
@@ -98,6 +102,12 @@ namespace Nue.Core
             try
             {
                 docFiles = Directory.GetFiles(source, "*.xml", SearchOption.TopDirectoryOnly).ToList();
+
+                if (package.CustomProperties.ExcludedDlls != null)
+                {
+                    docFiles = docFiles.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => b.EndsWith(d + ".xml"))).ToList();
+                }
+                
                 foreach (var docFile in docFiles)
                     File.Copy(docFile, Path.Combine(destination, Path.GetFileName(docFile)), true);
             }
