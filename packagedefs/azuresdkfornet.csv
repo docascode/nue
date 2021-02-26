@@ -1,4 +1,4 @@
-uwp-aspnetcore-app-ref,[excludedDlls=Microsoft.Win32.Registry|System.Diagnostics.EventLog|System.IO.Pipelines|System.Security.AccessControl|System.Security.Permissions|System.Security.Principal.Windows|System.Windows.Extensions|System.Security.Cryptography.Cng|System.Security.Cryptography.Xml]Microsoft.AspNetCore.App.Ref,3.0.0
+uwp-aspnetcore-app-ref,[excludedDlls=Microsoft.Win32.Registry.dll|System.Diagnostics.EventLog*|System.IO.Pipelines*|System.Security*|System.Windows.Extensions.dll]Microsoft.AspNetCore.App.Ref,3.0.0
 uwp-toolkit,[altDep=netstandard1.4|netstandard1.6]Microsoft.Toolkit.Uwp,2.0.0
 uwp-toolkit-notif,Microsoft.Toolkit.Uwp.Notifications
 uwp-toolkit-ui,Microsoft.Toolkit.Uwp.UI,2.0.0

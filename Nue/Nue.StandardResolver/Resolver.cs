@@ -278,10 +278,18 @@ namespace Nue.StandardResolver
                                     Directory.CreateDirectory(packageDependencyContainerPath);
                                 }
 
-                                foreach (var binary in package.CustomProperties.ExcludedDlls)
-                                    File.Copy(Path.Combine(excludedDllDirectory, Path.GetFileName(binary+".dll")),
-                                        Path.Combine(packageDependencyContainerPath, Path.GetFileName(binary + ".dll")),
-                                        true);
+                                var dlls = Directory.EnumerateFiles(excludedDllDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                                           .Where(s => s.EndsWith(".dll"));
+
+                                foreach (var dll in dlls)
+                                {
+                                    if (package.CustomProperties.ExcludedDlls.Any(d => Helpers.WildCardToRegex(d).IsMatch(Path.GetFileName(dll))))
+                                        {
+                                            File.Copy(dll,
+                                                Path.Combine(packageDependencyContainerPath, Path.GetFileName(dll)),
+                                                true);
+                                       }
+                                }
                             }
 
                             if (dependencyFolders.Any())

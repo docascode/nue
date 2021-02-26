@@ -75,6 +75,11 @@ namespace Nue.Core
             return folder;
         }
 
+        public static Regex WildCardToRegex(string pattern)
+        {
+            return new Regex("^" + Regex.Escape(pattern).Replace("\\?", ".").Replace("\\*", ".*") + "$", RegexOptions.Compiled);
+        }
+
         public static bool CopyLibraryContent(string source, string destination, PackageAtom package, out List<string> binaries)
         {
             binaries = new List<string>();
@@ -86,7 +91,7 @@ namespace Nue.Core
                                 .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).ToList();
                 if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Length != 0)
                 {
-                    binaries = binaries.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => b.EndsWith(d + ".dll"))).ToList();
+                    binaries = binaries.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => WildCardToRegex(d).IsMatch(Path.GetFileName(b)))).ToList();
                 }
             }
             catch
@@ -105,7 +110,7 @@ namespace Nue.Core
 
                 if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Length != 0)
                 {
-                    docFiles = docFiles.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => b.EndsWith(d + ".xml"))).ToList();
+                    docFiles = docFiles.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => WildCardToRegex(d).IsMatch(Path.GetFileName(b)))).ToList();
                 }
                 
                 foreach (var docFile in docFiles)
