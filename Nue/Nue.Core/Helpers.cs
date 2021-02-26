@@ -89,9 +89,9 @@ namespace Nue.Core
             {
                 binaries = Directory.GetFiles(source, "*.*", SearchOption.TopDirectoryOnly)
                                 .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).ToList();
-                if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Length != 0)
+                if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Count != 0)
                 {
-                    binaries = binaries.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => WildCardToRegex(d).IsMatch(Path.GetFileName(b)))).ToList();
+                    binaries = binaries.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => d.IsMatch(Path.GetFileName(b)))).ToList();
                 }
             }
             catch
@@ -108,9 +108,9 @@ namespace Nue.Core
             {
                 docFiles = Directory.GetFiles(source, "*.xml", SearchOption.TopDirectoryOnly).ToList();
 
-                if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Length != 0)
+                if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Count != 0)
                 {
-                    docFiles = docFiles.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => WildCardToRegex(d).IsMatch(Path.GetFileName(b)))).ToList();
+                    docFiles = docFiles.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => d.IsMatch(Path.GetFileName(b)))).ToList();
                 }
                 
                 foreach (var docFile in docFiles)

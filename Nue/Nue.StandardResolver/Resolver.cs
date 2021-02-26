@@ -265,7 +265,7 @@ namespace Nue.StandardResolver
                         // Only process dependencies if we actually captured binary content.
                         if (capturedContent)
                         {
-                            if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Length != 0)
+                            if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Count != 0)
                             {
                                 var excludedDllDirectory = pacManPackageLibPath;
                                 if (frameworkIsAvailable)
@@ -283,7 +283,7 @@ namespace Nue.StandardResolver
 
                                 foreach (var dll in dlls)
                                 {
-                                    if (package.CustomProperties.ExcludedDlls.Any(d => Helpers.WildCardToRegex(d).IsMatch(Path.GetFileName(dll))))
+                                    if (package.CustomProperties.ExcludedDlls.Any(d => d.IsMatch(Path.GetFileName(dll))))
                                         {
                                             File.Copy(dll,
                                                 Path.Combine(packageDependencyContainerPath, Path.GetFileName(dll)),
@@ -358,7 +358,7 @@ namespace Nue.StandardResolver
                                     }
                                 }
                             }
-                            else if(package.CustomProperties.ExcludedDlls == null || package.CustomProperties.ExcludedDlls.Length == 0)
+                            else if(package.CustomProperties.ExcludedDlls == null || package.CustomProperties.ExcludedDlls.Count == 0)
                             {
                                 Console.WriteLine($"[warning] No dependencies captured for {package.Name}");
                             }

@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Nue.Core
 {
@@ -59,7 +60,7 @@ namespace Nue.Core
         public string TFM { get; set; }
 
         [JsonProperty("excludedDlls")]
-        public string[] ExcludedDlls { get; set; }
+        public List<Regex> ExcludedDlls { get; set; }
     }
 
     public enum VersionOption
