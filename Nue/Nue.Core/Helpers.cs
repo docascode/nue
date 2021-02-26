@@ -84,7 +84,7 @@ namespace Nue.Core
             {
                 binaries = Directory.GetFiles(source, "*.*", SearchOption.TopDirectoryOnly)
                                 .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).ToList();
-                if (package.CustomProperties.ExcludedDlls != null)
+                if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Length != 0)
                 {
                     binaries = binaries.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => b.EndsWith(d + ".dll"))).ToList();
                 }
@@ -103,7 +103,7 @@ namespace Nue.Core
             {
                 docFiles = Directory.GetFiles(source, "*.xml", SearchOption.TopDirectoryOnly).ToList();
 
-                if (package.CustomProperties.ExcludedDlls != null)
+                if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Length != 0)
                 {
                     docFiles = docFiles.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => b.EndsWith(d + ".xml"))).ToList();
                 }
