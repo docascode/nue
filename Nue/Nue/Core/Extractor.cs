@@ -3,6 +3,7 @@ using Nue.StandardResolver;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,6 +56,15 @@ namespace Nue.Core
                 if (package.CustomPropertyBag.TryGetValue("customSource", out string feedVal))
                 {
                     package.CustomProperties.CustomFeed = feedVal;
+                }
+
+                if (package.CustomPropertyBag.TryGetValue("excludedDlls", out string excludedDllVal))
+                {
+                    if (!string.IsNullOrEmpty(excludedDllVal))
+                    {
+                        var excludedDlls = excludedDllVal.Split('|');
+                        package.CustomProperties.ExcludedDlls = excludedDlls.Select(e=>Helpers.WildCardToRegex(e)).ToList();
+                    }
                 }
             }
         }

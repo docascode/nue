@@ -57,6 +57,13 @@ namespace Nue.Core
             folder = GetWinningFolder(folderPaths, lenientMatch);
 
             if (!string.IsNullOrWhiteSpace(folder)) return folder;
+            // As an example, if the TFM is netcoreapp3.0 or net5.0, this should cover everything like:
+            // netstandard2.0, netstandard1.0
+            var tfmBaseOfNetCore = "netstandard";
+            var netCoreRegex = new Regex($@"^(?<full>(?<base>{tfmBaseOfNetCore})(?<version>[0-9\.0-9]*))$", RegexOptions.IgnoreCase);
+            folder = GetWinningFolder(folderPaths, netCoreRegex);
+
+            if (!string.IsNullOrWhiteSpace(folder)) return folder;
             // Now we just match the base, e.g. for net we should get:
             // net45, net46, net461
             var baseMatch = new Regex($@"^(?<full>(?<base>{tfmBase}[a-z]*)(?<version>[0-9\.0-9]*))$", RegexOptions.IgnoreCase);
@@ -66,13 +73,21 @@ namespace Nue.Core
             // Now do an even more lenient match within 
             var preciseTfmRegex = new Regex($@"(?<full>(?<version>{tfmBase})(?<version>[0-9\.0-9]+))", RegexOptions.IgnoreCase);
             folder = GetWinningFolder(folderPaths, preciseTfmRegex);
+           
 
             if (!string.IsNullOrWhiteSpace(folder)) return folder;
             // Given that we have found nothing, is there anything that matches the first 3 characters?
             var broadAssumptionRegex = new Regex($@"(?<full>(?<version>{tfmBase.Substring(0, 3)})(?<version>[0-9\.0-9]+))", RegexOptions.IgnoreCase);
             folder = GetWinningFolder(folderPaths, broadAssumptionRegex);
 
+           
+
             return folder;
+        }
+
+        public static Regex WildCardToRegex(string pattern)
+        {
+            return new Regex("^" + Regex.Escape(pattern).Replace("\\?", ".").Replace("\\*", ".*") + "$", RegexOptions.Compiled);
         }
 
         public static bool CopyLibraryContent(string source, string destination, PackageAtom package, out List<string> binaries)
@@ -84,6 +99,10 @@ namespace Nue.Core
             {
                 binaries = Directory.GetFiles(source, "*.*", SearchOption.TopDirectoryOnly)
                                 .Where(s => s.EndsWith(".dll") || s.EndsWith(".winmd")).ToList();
+                if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Count != 0)
+                {
+                    binaries = binaries.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => d.IsMatch(Path.GetFileName(b)))).ToList();
+                }
             }
             catch
             {
@@ -98,6 +117,12 @@ namespace Nue.Core
             try
             {
                 docFiles = Directory.GetFiles(source, "*.xml", SearchOption.TopDirectoryOnly).ToList();
+
+                if (package.CustomProperties.ExcludedDlls != null && package.CustomProperties.ExcludedDlls.Count != 0)
+                {
+                    docFiles = docFiles.Where(b => !package.CustomProperties.ExcludedDlls.Any(d => d.IsMatch(Path.GetFileName(b)))).ToList();
+                }
+                
                 foreach (var docFile in docFiles)
                     File.Copy(docFile, Path.Combine(destination, Path.GetFileName(docFile)), true);
             }
