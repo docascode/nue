@@ -68,9 +68,18 @@ namespace Nue.Core
             folder = GetWinningFolder(folderPaths, preciseTfmRegex);
 
             if (!string.IsNullOrWhiteSpace(folder)) return folder;
+            // As an example, if the TFM is netcoreapp3.0 or net5.0, this should cover everything like:
+            // netstandard2.0, netstandard1.0
+            var tfmBaseOfNetCore = "netstandard";
+            var netCoreRegex = new Regex($@"^(?<full>(?<base>{tfmBaseOfNetCore})(?<version>[0-9\.0-9]*))$", RegexOptions.IgnoreCase);
+            folder = GetWinningFolder(folderPaths, netCoreRegex);
+
+            if (!string.IsNullOrWhiteSpace(folder)) return folder;
             // Given that we have found nothing, is there anything that matches the first 3 characters?
             var broadAssumptionRegex = new Regex($@"(?<full>(?<version>{tfmBase.Substring(0, 3)})(?<version>[0-9\.0-9]+))", RegexOptions.IgnoreCase);
             folder = GetWinningFolder(folderPaths, broadAssumptionRegex);
+
+           
 
             return folder;
         }

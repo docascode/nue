@@ -98,6 +98,10 @@ namespace Nue.StandardResolver
                 pacManPackagePath = (from c in Directory.GetDirectories(rootPath) where c.StartsWith(pacManPackagePath, StringComparison.InvariantCultureIgnoreCase) select c).FirstOrDefault();
 
                 var packageVersion = pacManPackagePath.Replace(Path.Combine(rootPath, package.Name + "."), "");
+                if (package.IsDotnetPlatform)
+                {
+                    packageVersion = pacManPackagePath.Replace(Path.Combine(rootPath, package.Name.ToLowerInvariant() + "."), "");
+                }
 
                 // In some cases, the lookup might be happening inside a custom path.
                 // For PowerShell, this should be done inside the root directory.
@@ -108,11 +112,6 @@ namespace Nue.StandardResolver
                 else if (!string.IsNullOrWhiteSpace(package.CustomProperties?.CustomLibraryFolder))
                 {
                     pacManPackageLibPath = Path.Combine(pacManPackagePath, package.CustomProperties.CustomLibraryFolder);
-                }
-                else if (package.IsDotnetPlatform)
-                {
-                    packageVersion = pacManPackagePath.Replace(Path.Combine(rootPath, package.Name.ToLowerInvariant() + "."), "");
-                    pacManPackageLibPath = pacManPackagePath + "\\ref";
                 }
                 else
                 {
