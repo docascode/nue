@@ -134,50 +134,81 @@ namespace Nue.StandardResolver
                     {
                         Console.WriteLine($"[info] Treating {package.Name} as a PowerShell package.");
 
-                        var helpXmlFiles = from c in Directory.GetFiles(pacManPackageLibPath)
-                                           where Path.GetFileName(c).ToLower().EndsWith("-help.xml")
-                                           select c;
-
                         var dllFiles = new List<string>();
-
-                        foreach (var helpXmlFile in helpXmlFiles)
+                        if (package.CustomProperties.IncludedDlls != null && package.CustomProperties.IncludedDlls.Count != 0)
                         {
-                            var workingDll = Path.GetFileName(helpXmlFile).ToLower().Replace("-help.xml", "");
-                            if (File.Exists(Path.Combine(pacManPackageLibPath, workingDll)))
-                            {
-                                dllFiles.Add(workingDll);
-                            }
-                        }
+                            dllFiles = Directory.GetFiles(pacManPackageLibPath, "*.*", SearchOption.AllDirectories)
+                               .Where(s => s.EndsWith(".dll")).ToList();
 
-                        if (dllFiles.Any())
-                        {
                             foreach (var dll in dllFiles)
                             {
-                                File.Copy(Path.Combine(pacManPackageLibPath, dll), Path.Combine(packageContainerPath, dll), true);
-                                //File.Copy(Path.Combine(pacManPackageLibPath, dll + "-help.xml"), Path.Combine(packageContainerPath, Path.GetFileNameWithoutExtension(dll) + ".xml"), true);
-                            }
+                                var test = package.CustomProperties.IncludedDlls.Any(d => d.IsMatch(Path.GetFileName(dll)));
 
-                            var dependencies = (from c in Directory.GetFiles(pacManPackageLibPath)
-                                                where !dllFiles.Contains(Path.GetFileName(c).ToLower()) && Path.GetFileName(c).EndsWith(".dll")
-                                                select c).ToList();
-                            if ((tfm.StartsWith("net46") || tfm.StartsWith("net47") || tfm.StartsWith("net48"))
-                                && Directory.Exists(Path.Combine(pacManPackageLibPath, "PreloadAssemblies")))
-                            {
-                                dependencies.AddRange(Directory.GetFiles(Path.Combine(pacManPackageLibPath, "PreloadAssemblies")));
-                            }
-                            if (tfm.StartsWith("netcoreapp")
-                                && Directory.Exists(Path.Combine(pacManPackageLibPath, "NetCoreAssemblies")))
-                            {
-                                dependencies.AddRange(Directory.GetFiles(Path.Combine(pacManPackageLibPath, "NetCoreAssemblies")));
-                            }
-                            if (dependencies.Count > 0)
-                            {
-                                Directory.CreateDirectory(packageDependencyContainerPath);
-
-                                foreach (var dependency in dependencies)
+                                if (package.CustomProperties.IncludedDlls.Any(d => d.IsMatch(Path.GetFileName(dll))) && (
+                                    package.CustomProperties.ExcludedDlls == null ||
+                                    package.CustomProperties.ExcludedDlls.Count == 0 ||
+                                    !package.CustomProperties.ExcludedDlls.Any(d => d.IsMatch(Path.GetFileName(dll)))))
                                 {
+                                    File.Copy(dll,
+                                        Path.Combine(packageContainerPath, Path.GetFileName(dll)),
+                                        true);
+                                }
+                                else
+                                {
+                                    if (!Directory.Exists(packageDependencyContainerPath))
+                                    {
+                                        Directory.CreateDirectory(packageDependencyContainerPath);
+                                    }
 
-                                    File.Copy(dependency, Path.Combine(packageDependencyContainerPath, Path.GetFileName(dependency)), true);
+                                    File.Copy(dll, Path.Combine(packageDependencyContainerPath, Path.GetFileName(dll)), true);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var helpXmlFiles = from c in Directory.GetFiles(pacManPackageLibPath)
+                                               where Path.GetFileName(c).ToLower().EndsWith("-help.xml")
+                                               select c;
+
+                            foreach (var helpXmlFile in helpXmlFiles)
+                            {
+                                var workingDll = Path.GetFileName(helpXmlFile).ToLower().Replace("-help.xml", "");
+                                if (File.Exists(Path.Combine(pacManPackageLibPath, workingDll)))
+                                {
+                                    dllFiles.Add(workingDll);
+                                }
+                            }
+
+                            if (dllFiles.Any())
+                            {
+                                foreach (var dll in dllFiles)
+                                {
+                                    File.Copy(Path.Combine(pacManPackageLibPath, dll), Path.Combine(packageContainerPath, dll), true);
+                                    //File.Copy(Path.Combine(pacManPackageLibPath, dll + "-help.xml"), Path.Combine(packageContainerPath, Path.GetFileNameWithoutExtension(dll) + ".xml"), true);
+                                }
+
+                                var dependencies = (from c in Directory.GetFiles(pacManPackageLibPath)
+                                                    where !dllFiles.Contains(Path.GetFileName(c).ToLower()) && Path.GetFileName(c).EndsWith(".dll")
+                                                    select c).ToList();
+                                if ((tfm.StartsWith("net46") || tfm.StartsWith("net47") || tfm.StartsWith("net48"))
+                                    && Directory.Exists(Path.Combine(pacManPackageLibPath, "PreloadAssemblies")))
+                                {
+                                    dependencies.AddRange(Directory.GetFiles(Path.Combine(pacManPackageLibPath, "PreloadAssemblies")));
+                                }
+                                if (tfm.StartsWith("netcoreapp")
+                                    && Directory.Exists(Path.Combine(pacManPackageLibPath, "NetCoreAssemblies")))
+                                {
+                                    dependencies.AddRange(Directory.GetFiles(Path.Combine(pacManPackageLibPath, "NetCoreAssemblies")));
+                                }
+                                if (dependencies.Count > 0)
+                                {
+                                    Directory.CreateDirectory(packageDependencyContainerPath);
+
+                                    foreach (var dependency in dependencies)
+                                    {
+
+                                        File.Copy(dependency, Path.Combine(packageDependencyContainerPath, Path.GetFileName(dependency)), true);
+                                    }
                                 }
                             }
                         }
