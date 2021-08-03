@@ -59,6 +59,9 @@ namespace Nue.Core
         [JsonProperty("tfm")]
         public string TFM { get; set; }
 
+        [JsonProperty("includedDlls")]
+        public List<Regex> IncludedDlls { get; set; }
+
         [JsonProperty("excludedDlls")]
         public List<Regex> ExcludedDlls { get; set; }
     }

@@ -58,6 +58,15 @@ namespace Nue.Core
                     package.CustomProperties.CustomFeed = feedVal;
                 }
 
+                if (package.CustomPropertyBag.TryGetValue("includedDlls", out string includedDllVal))
+                {
+                    if (!string.IsNullOrEmpty(includedDllVal) && package.IsPowerShellPackage)
+                    {
+                        var includedDlls = includedDllVal.Split('|');
+                        package.CustomProperties.IncludedDlls = includedDlls.Select(e => Helpers.WildCardToRegex(e)).ToList();
+                    }
+                }
+
                 if (package.CustomPropertyBag.TryGetValue("excludedDlls", out string excludedDllVal))
                 {
                     if (!string.IsNullOrEmpty(excludedDllVal))
